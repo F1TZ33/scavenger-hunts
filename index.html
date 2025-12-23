@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>QR Scavenger Hunt</title>
+  <style>
+    body {
+      font-family: system-ui, sans-serif;
+      background: #f4f6f8;
+      margin: 0;
+      padding: 20px;
+    }
+    .card {
+      max-width: 600px;
+      margin: auto;
+      background: white;
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    }
+    h1 {
+      margin-top: 0;
+    }
+    .error {
+      background: #ffe5e5;
+      color: #b00020;
+      padding: 12px;
+      border-radius: 8px;
+      margin-top: 16px;
+    }
+    .success {
+      background: #e7f6e7;
+      color: #0b6623;
+      padding: 12px;
+      border-radius: 8px;
+      margin-top: 16px;
+    }
+    .footer {
+      margin-top: 24px;
+      font-size: 0.85em;
+      color: #666;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+
+<div class="card">
+  <h1 id="title">Scavenger Hunt</h1>
+  <div id="content"></div>
+</div>
+
+<script>
+/* ============================
+   HUNT DATA
+============================ */
+const HUNTS = {
+  escape: {
+    name: "Escape the House",
+    clues: [
+      "I show your face but I’m not a photo. I hang on walls and doors.",
+      "I have pages but no homework. I live where stories sleep.",
+      "I open wide but never talk. I keep food safe and cold.",
+      "I go round and round but never get dizzy.",
+      "I have hands but no arms. I’m always right on time.",
+      "I hide your feet when you’re not home.",
+      "I’m soft, comfy, and steal naps.",
+      "I light up the dark. Flip me on.",
+      "I’m full of secrets, but I don’t talk.",
+      "You cracked every lock! The final key is hidden where treasures are kept safe."
+    ]
+  },
+
+  fortnite: {
+    name: "Fortnite IRL: Victory Royale",
+    clues: [
+      "You’ve dropped in. Where controllers go when the game is off.",
+      "Shields up! Where drinks recharge HP.",
+      "Storm incoming. Where do shoes hide?",
+      "You need mats. Find where tools live.",
+      "Campfire deployed. Where the family chills.",
+      "Inventory check. You can’t win without sleep.",
+      "Chest nearby… where secrets hide.",
+      "Reboot van activated. Where devices recharge.",
+      "High ground wins games.",
+      "Final circle. Where battles are watched.",
+      "One last challenge… where snacks disappear.",
+      "🏆 VICTORY ROYALE! Claim your reward."
+    ]
+  },
+
+  hacker: {
+    name: "System Breach",
+    clues: [
+      "SYSTEM ONLINE. Device that controls all others.",
+      "AUTHENTICATION REQUIRED. Passwords written, not stored.",
+      "DATA COLD STORAGE.",
+      "INPUT DEVICE DETECTED.",
+      "PERIPHERAL FOUND. One click changes everything.",
+      "POWER SOURCE.",
+      "CACHE CLEARED.",
+      "BACKUP LOCATION.",
+      "DISPLAY OUTPUT.",
+      "SECURITY CHECKPOINT.",
+      "ENCRYPTED STORAGE.",
+      "SYSTEM LOG.",
+      "USER PROFILE.",
+      "FINAL ACCESS NODE.",
+      "ROOT ACCESS GRANTED. Retrieve payload."
+    ]
+  }
+};
+
+/* ============================
+   HELPERS
+============================ */
+const params = new URLSearchParams(window.location.search);
+const huntKey = params.get("h");
+const step = parseInt(params.get("s"), 10);
+
+const content = document.getElementById("content");
+const title = document.getElementById("title");
+
+function showError(msg) {
+  content.innerHTML = `<div class="error">${msg}</div>`;
+}
+
+function showSuccess(msg) {
+  content.innerHTML = `<div class="success">${msg}</div>`;
+}
+
+/* ============================
+   MAIN LOGIC
+============================ */
+if (!huntKey || !HUNTS[huntKey] || isNaN(step)) {
+  title.textContent = "Scavenger Hunt";
+  showError("❌ Invalid QR code. Please scan the correct starting QR.");
+} else {
+  const hunt = HUNTS[huntKey];
+  title.textContent = hunt.name;
+
+  // Load progress from device
+  const progressKey = `hunt-progress-${huntKey}`;
+  let currentStep = parseInt(localStorage.getItem(progressKey), 10);
+  if (isNaN(currentStep)) currentStep = -1;
+
+  // START QR
+  if (step === 0 && currentStep === -1) {
+    localStorage.setItem(progressKey, 0);
+    content.innerHTML = `
+      <p><strong>Welcome!</strong></p>
+      <p>Instructions:</p>
+      <ul>
+        <li>Read each clue carefully</li>
+        <li>Find the location</li>
+        <li>Scan the QR code you find</li>
+        <li>Wrong or out-of-order QR codes will not work</li>
+      </ul>
+      <div class="success">🎉 Clue 1 unlocked!</div>
+      <p>
