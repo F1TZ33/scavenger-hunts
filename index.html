@@ -31,9 +31,9 @@ body{
 .card{max-width:900px;margin:auto;padding:20px;}
 .hunt{
   background:var(--card);
-  padding:12px;
+  padding:14px;
   border-radius:12px;
-  margin-bottom:12px;
+  margin-bottom:14px;
   border:1px solid #ddd;
 }
 .admin{border:2px dashed #dc2626;}
@@ -63,8 +63,8 @@ textarea,input,select{
   text-align:center;
   padding:20px;
 }
-.center-screen h1{font-size:2.2rem;}
-.center-screen p{font-size:1.5rem;max-width:800px;}
+.center-screen h1{font-size:2.3rem;}
+.center-screen p{font-size:1.6rem;max-width:800px;}
 .bottom-bar{
   position:fixed;
   bottom:0;
@@ -73,7 +73,6 @@ textarea,input,select{
   padding:16px;
   display:flex;
   justify-content:center;
-  gap:12px;
 }
 video{
   width:100%;
@@ -103,15 +102,19 @@ video{
 <script src="https://cdn.jsdelivr.net/npm/jsqr/dist/jsQR.js"></script>
 
 <script>
-/* ========= CONFIG ========= */
+/* ================= CONFIG ================= */
 const ADMIN_PIN = "318933";
 const ADMIN_EMAIL = "Hayden_333@hotmail.com";
 
-/* ========= UTIL ========= */
+/* ================= UTIL ================= */
 function uid(){ return Math.random().toString(36).slice(2,9); }
+function isDefaultHunt(key){
+  return Object.prototype.hasOwnProperty.call(DEFAULT_HUNTS, key);
+}
 
-/* ========= ADMIN ========= */
+/* ================= ADMIN ================= */
 let isAdmin = sessionStorage.getItem("admin")==="1";
+
 function toggleAdmin(){
   if(isAdmin){
     isAdmin=false;
@@ -127,7 +130,7 @@ function toggleAdmin(){
   } else alert("Incorrect PIN");
 }
 
-/* ========= DEFAULT HUNTS ========= */
+/* ================= DEFAULT HUNTS ================= */
 const DEFAULT_HUNTS={
   escape:{
     name:"Escape the House",
@@ -196,7 +199,7 @@ let userHunts = JSON.parse(localStorage.getItem("userHunts")||"{}");
 let HUNTS = {...DEFAULT_HUNTS, ...userHunts};
 function save(){ localStorage.setItem("userHunts", JSON.stringify(userHunts)); }
 
-/* ========= ROUTER ========= */
+/* ================= ROUTER ================= */
 const q = new URLSearchParams(location.search);
 const app = document.getElementById("app");
 
@@ -205,7 +208,7 @@ else if(q.get("edit")) createHunt(q.get("edit"));
 else if(q.get("new")) createHunt();
 else home();
 
-/* ========= HOME ========= */
+/* ================= HOME ================= */
 function home(){
   document.body.className="";
   app.innerHTML=`
@@ -218,11 +221,17 @@ function home(){
     ${Object.entries(HUNTS)
       .sort((a,b)=>a[1].name.localeCompare(b[1].name))
       .map(([k,h])=>`
-        <div class="hunt ${isAdmin && !DEFAULT_HUNTS[k]?'admin':''}">
+        <div class="hunt ${isAdmin && !isDefaultHunt(k)?'admin':''}">
           <h3>${h.name}</h3>
           <button onclick="generatePDF('${k}')">🖨 Generate QR PDF</button>
-          ${!DEFAULT_HUNTS[k]?`<button class="secondary" onclick="location='?edit=${k}'">✏ Modify</button>`:""}
-          ${isAdmin && !DEFAULT_HUNTS[k]?`<button class="danger" onclick="deleteHunt('${k}')">🗑 Delete</button>`:""}
+
+          ${isAdmin ? `
+            <button class="secondary" onclick="location='?edit=${k}'">✏ Modify</button>
+          ` : ""}
+
+          ${isAdmin && !isDefaultHunt(k) ? `
+            <button class="danger" onclick="deleteHunt('${k}')">🗑 Delete</button>
+          ` : ""}
         </div>
       `).join("")}
 
@@ -246,7 +255,7 @@ function deleteHunt(k){
   }
 }
 
-/* ========= CREATE / EDIT ========= */
+/* ================= CREATE / EDIT ================= */
 function createHunt(k){
   const h = k ? HUNTS[k] : {name:"",theme:"blue",intro:"",clues:[""],finish:""};
   app.innerHTML=`
@@ -287,7 +296,7 @@ function saveHunt(k){
   home();
 }
 
-/* ========= PLAY ========= */
+/* ================= PLAY ================= */
 function play(){
   const key=q.get("play");
   const h=HUNTS[key];
@@ -325,7 +334,7 @@ function play(){
   flashWrongQR(key,p);
 }
 
-/* ========= CAMERA + SCAN ========= */
+/* ================= CAMERA ================= */
 let scanActive=false;
 
 async function startCamera(){
@@ -375,7 +384,7 @@ function flashWrongQR(key,p){
   },3000);
 }
 
-/* ========= PDF ========= */
+/* ================= PDF ================= */
 async function generatePDF(k){
   const {jsPDF}=window.jspdf;
   const pdf=new jsPDF();
