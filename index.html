@@ -9,7 +9,6 @@
 body {
   font-family: system-ui, sans-serif;
   background: #f4f6f8;
-  margin: 0;
   padding: 20px;
 }
 .card {
@@ -18,31 +17,13 @@ body {
   background: white;
   border-radius: 12px;
   padding: 20px;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
 }
-h1, h2 { margin-top: 0; }
-button {
-  padding: 8px 14px;
-  margin: 6px 6px 6px 0;
-}
-textarea {
-  width: 100%;
-  min-height: 60px;
-}
-input[type="text"] {
-  width: 100%;
-  padding: 8px;
-  margin-bottom: 12px;
-}
-.hunt {
-  border: 1px solid #ddd;
-  padding: 12px;
-  border-radius: 8px;
-  margin-bottom: 12px;
-}
-.success { background: #e7f6e7; padding: 12px; border-radius: 8px; }
-.error { background: #ffe5e5; padding: 12px; border-radius: 8px; }
-.toggle { margin: 12px 0; }
+button { padding: 8px 14px; margin: 6px 6px 6px 0; }
+textarea { width: 100%; min-height: 60px; }
+input[type="text"] { width: 100%; padding: 8px; margin-bottom: 12px; }
+.hunt { border: 1px solid #ddd; padding: 12px; border-radius: 8px; margin-bottom: 12px; }
+.success { background:#e7f6e7;padding:12px;border-radius:8px; }
+.error { background:#ffe5e5;padding:12px;border-radius:8px; }
 </style>
 </head>
 
@@ -53,278 +34,121 @@ input[type="text"] {
 <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
 
 <script>
-/* =========================
-   STORAGE
-========================= */
-let HUNTS = JSON.parse(localStorage.getItem("hunts")) || {
+/* ===== PDF SAFE TEXT ===== */
+function cleanText(t){
+  return t.replace(/[‘’]/g,"'").replace(/[“”]/g,'"').replace(/–/g,"-");
+}
 
+/* ===== FULL STARTER HUNTS ===== */
+const DEFAULT_HUNTS = {
   escape: {
-    name: "Escape the House",
+    name: "Escape the House (Age 11)",
     clues: [
       "I show your face but I’m not a photo.",
       "I have pages but no homework.",
       "I keep food safe and cold.",
-      "I go round and round but never get dizzy."
+      "I go round and round but never get dizzy.",
+      "I have hands but no arms.",
+      "I hide your feet when you’re not home.",
+      "I’m soft, comfy, and steal naps.",
+      "I light the dark when switched on.",
+      "I’m full of secrets behind closed doors.",
+      "The prize is hidden where valuables stay safe."
     ]
   },
-
   fortnite: {
-    name: "Fortnite IRL",
+    name: "Fortnite IRL – Victory Royale (Age 13)",
     clues: [
       "Controllers land here after a match.",
       "Drinks restore shields here.",
-      "Shoes hide here after the storm."
+      "Shoes hide here after the storm.",
+      "Materials are stored with tools.",
+      "The squad gathers here.",
+      "You can’t win without sleep.",
+      "Secrets behind closed doors.",
+      "Devices recharge here.",
+      "High ground advantage.",
+      "Where battles are watched.",
+      "Snacks disappear here.",
+      "🏆 Victory Royale location."
     ]
   },
-
   hacker: {
-    name: "System Breach",
+    name: "System Breach (Age 19)",
     clues: [
       "Device that controls all others.",
       "Passwords written but not digital.",
-      "Cold data storage."
+      "Cold data storage.",
+      "Where commands are typed.",
+      "Single click changes everything.",
+      "Primary power source.",
+      "Clothes reset location.",
+      "Backup storage area.",
+      "Display output surface.",
+      "Permission checkpoint.",
+      "Hidden encrypted space.",
+      "Logs of activity.",
+      "User rest zone.",
+      "Final access node.",
+      "Root access payload location."
     ]
   }
 };
 
-const params = new URLSearchParams(location.search);
-const mode = params.get("mode");
-const huntKey = params.get("h");
-const step = parseInt(params.get("s"), 10);
-const app = document.getElementById("app");
+/* ===== STORAGE ===== */
+const userHunts = JSON.parse(localStorage.getItem("userHunts")) || {};
+const HUNTS = { ...DEFAULT_HUNTS, ...userHunts };
+function saveUserHunts(){
+  const o={};
+  Object.keys(HUNTS).forEach(k=>{ if(!DEFAULT_HUNTS[k]) o[k]=HUNTS[k]; });
+  localStorage.setItem("userHunts",JSON.stringify(o));
+}
 
-/* =========================
-   ROUTER
-========================= */
-if (huntKey && !isNaN(step)) runHuntMode();
-else if (mode === "edit") runBuilder(huntKey);
-else if (mode === "new") runNewHunt();
+/* ===== ROUTER ===== */
+const p=new URLSearchParams(location.search);
+const app=document.getElementById("app");
+const mode=p.get("mode"), huntKey=p.get("h"), step=parseInt(p.get("s"),10);
+if(huntKey && !isNaN(step)) runHunt();
 else runHome();
 
-/* =========================
-   HOME (SORT + SEARCH)
-========================= */
-function runHome() {
-  app.innerHTML = `
-    <h1>QR Scavenger Hunts</h1>
-
-    <input
-      id="search"
-      type="text"
-      placeholder="Search hunts by name or keyword..."
-      oninput="filterHunts()"
-    >
-
-    <div id="huntList"></div>
-
-    <hr>
-    <a href="?mode=new"><button>➕ Create Your Own Hunt</button></a>
-  `;
-
-  renderHunts("");
+/* ===== HOME ===== */
+function runHome(){
+  app.innerHTML=`<h1>QR Scavenger Hunts</h1>
+  <p><b>Adults:</b> Click Start to generate QR codes.<br>
+  <b>Players:</b> Scan the START QR.</p>
+  ${Object.entries(HUNTS).map(([k,h])=>`
+    <div class="hunt">
+      <h2>${h.name}</h2>
+      <button onclick="generatePDF('${k}',HUNTS['${k}'])">🖨 Start / Generate QR Pack</button>
+    </div>`).join("")}`;
 }
 
-function renderHunts(query) {
-  const list = document.getElementById("huntList");
-  const q = query.toLowerCase();
-
-  const filtered = Object.entries(HUNTS)
-    .filter(([_, hunt]) =>
-      hunt.name.toLowerCase().includes(q) ||
-      hunt.clues.some(c => c.toLowerCase().includes(q))
-    )
-    .sort((a, b) => a[1].name.localeCompare(b[1].name));
-
-  list.innerHTML = filtered.length
-    ? filtered.map(([key, hunt]) => `
-        <div class="hunt">
-          <h2>${hunt.name}</h2>
-          <a href="?h=${key}&s=0"><button>▶ Start</button></a>
-          <a href="?mode=edit&h=${key}"><button>✏ Modify</button></a>
-        </div>
-      `).join("")
-    : `<p>No hunts found.</p>`;
+/* ===== HUNT MODE ===== */
+function runHunt(){
+  const h=HUNTS[huntKey];
+  if(!h) return app.innerHTML="<div class='error'>Invalid hunt</div>";
+  const k="progress-"+huntKey;
+  let c=parseInt(localStorage.getItem(k),10); if(isNaN(c))c=-1;
+  if(step===0 && c===-1){localStorage.setItem(k,0); return app.innerHTML=`<h1>${h.name}</h1><p>${h.clues[0]}</p>`;}
+  if(step===c+1){localStorage.setItem(k,step); return app.innerHTML=`<h1>${h.name}</h1><p>${h.clues[step]}</p>`;}
+  app.innerHTML="<div class='error'>Wrong QR code</div>";
 }
 
-function filterHunts() {
-  renderHunts(document.getElementById("search").value);
-}
-
-/* =========================
-   CREATE NEW HUNT
-========================= */
-function runNewHunt() {
-  let temp = { name: "", clues: [] };
-  let saveEnabled = false;
-
-  app.innerHTML = `
-    <h1>Create New Hunt</h1>
-
-    <p>Hunt Name</p>
-    <input id="name">
-
-    <div class="toggle">
-      <label>
-        <input type="checkbox" id="saveToggle">
-        Save this hunt to home screen
-      </label>
-    </div>
-
-    <div id="clues"></div>
-
-    <button onclick="addClue()">➕ Add Clue</button>
-    <button onclick="generateFromNew()">📄 Generate QR PDF</button>
-    <button onclick="runHome()">❌ Cancel</button>
-  `;
-
-  document.getElementById("saveToggle").onchange = e => {
-    saveEnabled = e.target.checked;
-  };
-
-  window.addClue = () => {
-    temp.clues.push("");
-    render();
-  };
-
-  window.generateFromNew = async () => {
-    temp.name = document.getElementById("name").value || "Untitled Hunt";
-    const key = "hunt" + Date.now();
-
-    await generatePDF(key, temp);
-
-    if (saveEnabled) {
-      HUNTS[key] = temp;
-      localStorage.setItem("hunts", JSON.stringify(HUNTS));
-      runHome();
-    }
-  };
-
-  function render() {
-    const div = document.getElementById("clues");
-    div.innerHTML = "";
-    temp.clues.forEach((c, i) => {
-      div.innerHTML += `
-        <p>Clue ${i + 1}</p>
-        <textarea onchange="temp.clues[${i}] = this.value">${c}</textarea>
-      `;
-    });
+/* ===== PDF ===== */
+async function generatePDF(key,h){
+  const pdf=new jspdf.jsPDF();
+  const base=location.origin+location.pathname;
+  pdf.text(cleanText(h.name),10,20);
+  pdf.text(cleanText("Scan the START QR to begin."),10,35);
+  async function page(t,u){
+    pdf.addPage(); pdf.text(cleanText(t),10,20);
+    const c=document.createElement("canvas");
+    await QRCode.toCanvas(c,u,{width:300});
+    pdf.addImage(c.toDataURL(),"PNG",30,40,150,150);
   }
-}
-
-/* =========================
-   EDIT EXISTING
-========================= */
-function runBuilder(key) {
-  const hunt = HUNTS[key];
-  if (!hunt) return runHome();
-
-  app.innerHTML = `
-    <h1>Edit: ${hunt.name}</h1>
-    <div id="clues"></div>
-    <button onclick="addClue()">➕ Add Clue</button>
-    <button onclick="save()">💾 Save</button>
-    <button onclick="generatePDF('${key}', HUNTS['${key}'])">📄 Generate QR PDF</button>
-  `;
-
-  render();
-
-  window.addClue = () => { hunt.clues.push(""); render(); };
-  window.save = () => {
-    localStorage.setItem("hunts", JSON.stringify(HUNTS));
-    alert("Saved!");
-  };
-
-  function render() {
-    const div = document.getElementById("clues");
-    div.innerHTML = "";
-    hunt.clues.forEach((c, i) => {
-      div.innerHTML += `
-        <p>Clue ${i + 1}</p>
-        <textarea onchange="HUNTS['${key}'].clues[${i}] = this.value">${c}</textarea>
-      `;
-    });
-  }
-}
-
-/* =========================
-   HUNT MODE
-========================= */
-function runHuntMode() {
-  const hunt = HUNTS[huntKey];
-  if (!hunt) return app.innerHTML = `<div class="error">Invalid hunt.</div>`;
-
-  const key = "progress-" + huntKey;
-  let current = parseInt(localStorage.getItem(key), 10);
-  if (isNaN(current)) current = -1;
-
-  if (step === 0 && current === -1) {
-    localStorage.setItem(key, 0);
-    return app.innerHTML = `
-      <h1>${hunt.name}</h1>
-      <div class="success">Clue 1 unlocked!</div>
-      <p>${hunt.clues[0]}</p>
-    `;
-  }
-
-  if (step === current + 1) {
-    localStorage.setItem(key, step);
-    return app.innerHTML = `
-      <h1>${hunt.name}</h1>
-      <div class="success">Correct!</div>
-      <p>${hunt.clues[step]}</p>
-    `;
-  }
-
-  app.innerHTML = `<div class="error">Wrong QR code. Try again.</div>`;
-}
-
-/* =========================
-   PDF GENERATION
-========================= */
-async function generatePDF(key, hunt) {
-  const { jsPDF } = window.jspdf;
-  const pdf = new jsPDF();
-  const base = location.origin + location.pathname;
-
-  pdf.setFontSize(18);
-  pdf.text(hunt.name, 10, 20);
-
-  pdf.setFontSize(12);
-  pdf.text(
-`HOW TO SET UP THIS SCAVENGER HUNT
-
-1. Print this PDF
-2. Place the START QR where players begin
-3. Hide each next QR at the answer to the clue
-4. Players must scan QRs in order
-
-OPTIONAL:
-You can ignore QR codes and use the printable clues instead.`,
-    10, 30
-  );
-
-  async function addQRPage(title, url) {
-    pdf.addPage();
-    pdf.text(title, 10, 20);
-    const canvas = document.createElement("canvas");
-    await QRCode.toCanvas(canvas, url, { width: 300 });
-    pdf.addImage(canvas.toDataURL(), "PNG", 30, 40, 150, 150);
-  }
-
-  await addQRPage("START QR", `${base}?h=${key}&s=0`);
-  for (let i = 0; i < hunt.clues.length; i++) {
-    await addQRPage(`Clue ${i + 1}`, `${base}?h=${key}&s=${i + 1}`);
-  }
-
-  pdf.addPage();
-  pdf.text("Printable Clues", 10, 20);
-
-  let y = 30;
-  hunt.clues.forEach((clue, i) => {
-    pdf.text(`Clue ${i + 1}: ${clue}`, 10, y);
-    y += 12;
-  });
-
+  await page("START QR",`${base}?h=${key}&s=0`);
+  for(let i=0;i<h.clues.length;i++)
+    await page(`Clue ${i+1}`,`${base}?h=${key}&s=${i+1}`);
   pdf.output("dataurlnewwindow");
 }
 </script>
