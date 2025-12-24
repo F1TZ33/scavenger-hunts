@@ -324,7 +324,7 @@ async function generatePDF(k){
   const { jsPDF } = window.jspdf;
   const pdf = new jsPDF();
   const h = HUNTS[k];
-  const base = location.origin + location.pathname; // Absolute URL
+  const base = window.location.origin + window.location.pathname; // Absolute URL
 
   // Function to generate each QR page
   async function page(title, url) {
@@ -344,17 +344,8 @@ async function generatePDF(k){
   pdf.text(h.name, 10, 20);
   pdf.text("Print and place these QR codes in order.", 10, 30);
 
-  // Add each page (QR code) in sequence
+  // Add each page (QR code) in sequence, using absolute URL (with domain)
   await page("START QR", `${base}?play=${k}&s=0`);
   await page("INTRO QR", `${base}?play=${k}&s=1`);
   for (let i = 0; i < h.clues.length; i++) {
-    await page(`Clue ${i + 1} QR`, `${base}?play=${k}&s=${i + 2}`);
-  }
-  await page("FINISH QR", `${base}?play=${k}&s=${h.clues.length + 2}`);
-
-  // Save the PDF to the user's device
-  pdf.save(`${h.name}.pdf`);
-}
-</script>
-</body>
-</html>
+    await page(`Clue ${i + 1} QR`, `${base}?play=${k}&s=${i +
