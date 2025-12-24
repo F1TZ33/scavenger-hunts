@@ -6,13 +6,104 @@
 <title>QR Scavenger Hunts</title>
 
 <style>
-body { font-family: system-ui,sans-serif; background:#f4f6f8; padding:20px; }
-.card { max-width:900px; margin:auto; background:#fff; padding:20px; border-radius:12px; }
-.hunt { border:1px solid #ddd; padding:12px; border-radius:8px; margin-bottom:12px; }
-button { margin:6px 6px 6px 0; padding:8px 14px; }
-textarea,input { width:100%; padding:8px; margin-bottom:10px; }
-.error { background:#ffe5e5; padding:12px; border-radius:8px; }
-video { width:100%; max-width:400px; margin-top:10px; }
+:root{
+  --bg:#f4f6f8;
+  --card:#ffffff;
+  --accent:#2563eb;
+  --text:#111827;
+}
+
+body{
+  margin:0;
+  font-family: system-ui, -apple-system, sans-serif;
+  background:var(--bg);
+  color:var(--text);
+}
+
+.theme-blue{ --accent:#2563eb; }
+.theme-red{ --accent:#dc2626; }
+.theme-green{ --accent:#16a34a; }
+.theme-purple{ --accent:#7c3aed; }
+.theme-dark{
+  --bg:#0f172a;
+  --card:#020617;
+  --text:#e5e7eb;
+  --accent:#38bdf8;
+}
+
+.card{
+  max-width:900px;
+  margin:auto;
+  padding:20px;
+}
+
+.hunt{
+  border:1px solid #ddd;
+  padding:12px;
+  border-radius:10px;
+  margin-bottom:12px;
+  background:var(--card);
+}
+
+button{
+  padding:10px 16px;
+  border-radius:10px;
+  border:none;
+  background:var(--accent);
+  color:white;
+  font-size:16px;
+  cursor:pointer;
+}
+
+button.secondary{
+  background:#6b7280;
+}
+
+textarea,input,select{
+  width:100%;
+  padding:10px;
+  margin-bottom:10px;
+  font-size:16px;
+}
+
+.center-screen{
+  min-height:100vh;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  align-items:center;
+  text-align:center;
+  padding:20px;
+}
+
+.center-screen h1{
+  font-size:2.2rem;
+  margin-bottom:16px;
+}
+
+.center-screen p{
+  font-size:1.5rem;
+  max-width:800px;
+}
+
+.bottom-bar{
+  position:fixed;
+  bottom:0;
+  left:0;
+  right:0;
+  padding:16px;
+  background:linear-gradient(transparent,rgba(0,0,0,0.1));
+  display:flex;
+  justify-content:center;
+  gap:12px;
+}
+
+video{
+  width:100%;
+  max-width:420px;
+  border-radius:12px;
+  margin-top:12px;
+}
 </style>
 </head>
 
@@ -24,219 +115,185 @@ video { width:100%; max-width:400px; margin-top:10px; }
 <script src="https://cdn.jsdelivr.net/npm/jsqr/dist/jsQR.js"></script>
 
 <script>
-/* ======================
-   HELPERS
-====================== */
+/* =====================
+   UTIL
+===================== */
 function cleanText(t){
   return t.replace(/[‘’]/g,"'").replace(/[“”]/g,'"');
 }
 function uid(){ return Math.random().toString(36).slice(2,9); }
 
-/* ======================
-   HUNTS
-====================== */
+/* =====================
+   DEFAULT HUNTS
+===================== */
 const DEFAULT_HUNTS={
-  escape:{name:"Escape the House",clues:[
-    "I show your face but I'm not a photo.",
-    "I have pages but no homework.",
-    "I keep food safe and cold.",
-    "I go round and round but never get dizzy.",
-    "I have hands but no arms.",
-    "I hide your feet when you're not home.",
-    "I'm soft, comfy, and steal naps.",
-    "I light the dark when switched on.",
-    "I'm full of secrets behind closed doors.",
-    "The prize is hidden where valuables stay safe."
-  ]},
-  fortnite:{name:"Fortnite IRL",clues:[
-    "Controllers land here after a match.",
-    "Drinks restore shields here.",
-    "Shoes hide here after the storm.",
-    "Materials are stored with tools.",
-    "The squad gathers here.",
-    "You can’t win without sleep.",
-    "Secrets behind closed doors.",
-    "Devices recharge here.",
-    "High ground advantage.",
-    "Where battles are watched.",
-    "Snacks disappear here.",
-    "Victory Royale location."
-  ]},
-  hacker:{name:"System Breach",clues:[
-    "Device that controls all others.",
-    "Passwords written but not digital.",
-    "Cold data storage.",
-    "Where commands are typed.",
-    "Single click changes everything.",
-    "Primary power source.",
-    "Clothes reset location.",
-    "Backup storage area.",
-    "Display output surface.",
-    "Permission checkpoint.",
-    "Hidden encrypted space.",
-    "Logs of activity.",
-    "User rest zone.",
-    "Final access node.",
-    "Root access payload location."
-  ]}
+  escape:{
+    name:"Escape the House",
+    theme:"blue",
+    intro:"Welcome! Your escape challenge begins now 🏠",
+    clues:[
+      "I show your face but I'm not a photo.",
+      "I have pages but no homework.",
+      "I keep food safe and cold.",
+      "I go round and round but never get dizzy.",
+      "I have hands but no arms.",
+      "I hide your feet when you're not home.",
+      "I'm soft, comfy, and steal naps.",
+      "I light the dark when switched on.",
+      "I'm full of secrets behind closed doors.",
+      "The prize is hidden where valuables stay safe."
+    ],
+    finish:"🎉 Congratulations! You escaped the house!"
+  },
+  fortnite:{
+    name:"Fortnite IRL",
+    theme:"purple",
+    intro:"Drop in! Your real-world Fortnite challenge starts now 🎮",
+    clues:[
+      "Controllers land here after a match.",
+      "Drinks restore shields here.",
+      "Shoes hide here after the storm.",
+      "Materials are stored with tools.",
+      "The squad gathers here.",
+      "You can’t win without sleep.",
+      "Secrets behind closed doors.",
+      "Devices recharge here.",
+      "High ground advantage.",
+      "Where battles are watched.",
+      "Snacks disappear here.",
+      "Victory Royale location."
+    ],
+    finish:"🏆 Victory Royale! You completed the hunt!"
+  },
+  hacker:{
+    name:"System Breach",
+    theme:"dark",
+    intro:"⚠️ Incoming transmission… system access required.",
+    clues:[
+      "Device that controls all others.",
+      "Passwords written but not digital.",
+      "Cold data storage.",
+      "Where commands are typed.",
+      "Single click changes everything.",
+      "Primary power source.",
+      "Clothes reset location.",
+      "Backup storage area.",
+      "Display output surface.",
+      "Permission checkpoint.",
+      "Hidden encrypted space.",
+      "Logs of activity.",
+      "User rest zone.",
+      "Final access node.",
+      "Root access payload location."
+    ],
+    finish:"✅ SYSTEM BREACH COMPLETE — ACCESS GRANTED."
+  }
 };
 
 let userHunts=JSON.parse(localStorage.getItem("userHunts")||"{}");
 let HUNTS={...DEFAULT_HUNTS,...userHunts};
 function save(){ localStorage.setItem("userHunts",JSON.stringify(userHunts)); }
 
-/* ======================
+/* =====================
    ROUTER
-====================== */
+===================== */
 const q=new URLSearchParams(location.search);
 const app=document.getElementById("app");
 
 if(q.get("play")) play();
-else if(q.get("edit")) editHunt(q.get("edit"));
+else if(q.get("edit")) createHunt(q.get("edit"));
 else if(q.get("new")) createHunt();
 else home();
 
-/* ======================
+/* =====================
    HOME
-====================== */
+===================== */
 function home(){
+  app.className="";
   app.innerHTML=`
     <h1>QR Scavenger Hunts</h1>
     <button onclick="location='?new=1'">➕ Create New Hunt</button>
-    ${Object.entries(HUNTS).sort((a,b)=>a[1].name.localeCompare(b[1].name)).map(([k,h])=>`
-      <div class="hunt">
-        <h3>${h.name}</h3>
-        <button onclick="generatePDF('${k}')">🖨 Generate QR PDF</button>
-        ${DEFAULT_HUNTS[k]?'':`<button onclick="location='?edit=${k}'">✏ Modify</button>`}
-      </div>
-    `).join("")}
+    ${Object.entries(HUNTS)
+      .sort((a,b)=>a[1].name.localeCompare(b[1].name))
+      .map(([k,h])=>`
+        <div class="hunt">
+          <h3>${h.name}</h3>
+          <button onclick="generatePDF('${k}')">🖨 Generate QR PDF</button>
+          ${DEFAULT_HUNTS[k]?"":`<button class="secondary" onclick="location='?edit=${k}'">✏ Modify</button>`}
+        </div>
+      `).join("")}
   `;
 }
 
-/* ======================
+/* =====================
    CREATE / EDIT
-====================== */
+===================== */
 function createHunt(k){
-  const h=k?HUNTS[k]:{name:"",clues:[""]};
+  const h=k?HUNTS[k]:{
+    name:"",
+    theme:"blue",
+    intro:"",
+    clues:[""],
+    finish:""
+  };
+
   app.innerHTML=`
     <h2>${k?"Modify":"Create"} Hunt</h2>
-    <input id="name" value="${h.name}">
+    <input id="name" placeholder="Hunt name" value="${h.name}">
+    <select id="theme">
+      ${["blue","red","green","purple","dark"].map(t=>
+        `<option ${h.theme===t?"selected":""} value="${t}">${t}</option>`
+      ).join("")}
+    </select>
+    <textarea id="intro" placeholder="Custom intro message">${h.intro}</textarea>
     <div id="clues"></div>
-    <button onclick="addClue()">➕ Add Clue</button><br>
+    <button onclick="addClue()">➕ Add Clue</button>
+    <textarea id="finish" placeholder="Final congratulations message">${h.finish}</textarea>
     <button onclick="saveHunt('${k||""}')">💾 Save</button>
-    <button onclick="home()">Cancel</button>
+    <button class="secondary" onclick="home()">Cancel</button>
   `;
+
   h.clues.forEach(c=>addClue(c));
 }
-function editHunt(k){ createHunt(k); }
 
 function addClue(text=""){
   const t=document.createElement("textarea");
+  t.placeholder="Clue text";
   t.value=text;
   document.getElementById("clues").appendChild(t);
 }
 
 function saveHunt(k){
-  const name=document.getElementById("name").value.trim();
-  const clues=[...document.querySelectorAll("textarea")].map(t=>t.value).filter(Boolean);
-  if(!name||!clues.length) return alert("Name and clues required");
+  const name=nameEl.value.trim();
+  const intro=introEl.value.trim();
+  const finish=finishEl.value.trim();
+  const theme=document.getElementById("theme").value;
+  const clues=[...document.querySelectorAll("#clues textarea")].map(t=>t.value).filter(Boolean);
+  if(!name||!intro||!finish||!clues.length) return alert("All fields required");
   if(!k) k=uid();
-  userHunts[k]={name,clues};
+  userHunts[k]={name,theme,intro,clues,finish};
   HUNTS[k]=userHunts[k];
   save();
   home();
 }
 
-/* ======================
-   PLAY MODE
-====================== */
+/* =====================
+   PLAY
+===================== */
 function play(){
-  const h=HUNTS[q.get("play")];
+  const key=q.get("play");
+  const h=HUNTS[key];
   const step=parseInt(q.get("s"));
-  const key="progress-"+q.get("play");
-  let p=parseInt(localStorage.getItem(key)||"-1");
+  document.body.className="theme-"+h.theme;
 
-  if(step===0 && p===-1){
-    localStorage.setItem(key,0);
-    return showPage("Instructions",
-      "Find the QR code in the correct location to continue."
-    );
-  }
+  const store="p-"+key;
+  let p=parseInt(localStorage.getItem(store)||"-1");
 
-  if(step===p+1){
-    localStorage.setItem(key,step);
-    return showPage(`Clue ${step}`, h.clues[step-1]);
-  }
-
-  app.innerHTML="<div class='error'>Wrong QR code. Try again.</div>";
-}
-
-function showPage(title,text){
-  app.innerHTML=`
-    <h1>${title}</h1>
-    <p>${text}</p>
-    <p><strong>Find the QR code in the correct location to continue.</strong></p>
-    <button onclick="startCamera()">📷 Scan QR Code</button>
-    <video id="video" hidden></video>
-  `;
-}
-
-/* ======================
-   CAMERA SCANNER
-====================== */
-async function startCamera(){
-  const v=document.getElementById("video");
-  v.hidden=false;
-  const stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:"environment"}});
-  v.srcObject=stream; v.play();
-
-  const c=document.createElement("canvas");
-  const ctx=c.getContext("2d");
-
-  function scan(){
-    if(v.readyState===v.HAVE_ENOUGH_DATA){
-      c.width=v.videoWidth; c.height=v.videoHeight;
-      ctx.drawImage(v,0,0);
-      const img=ctx.getImageData(0,0,c.width,c.height);
-      const code=jsQR(img.data,c.width,c.height);
-      if(code){ location.href=code.data; return; }
-    }
-    requestAnimationFrame(scan);
-  }
-  scan();
-}
-
-/* ======================
-   PDF GENERATOR
-====================== */
-async function generatePDF(k){
-  const {jsPDF}=window.jspdf;
-  const pdf=new jsPDF();
-  const h=HUNTS[k];
-  const base=location.origin+location.pathname;
-
-  pdf.text(cleanText(h.name),10,20);
-  pdf.text("Scan START QR to begin.",10,30);
-
-  async function page(title,url){
-    pdf.addPage();
-    pdf.text(title,10,20);
-    const c=document.createElement("canvas");
-    await QRCode.toCanvas(c,url,{width:300});
-    pdf.addImage(c.toDataURL(),"PNG",30,40,150,150);
-  }
-
-  await page("START QR",`${base}?play=${k}&s=0`);
-  for(let i=0;i<h.clues.length;i++)
-    await page(`Clue ${i+1}`,`${base}?play=${k}&s=${i+1}`);
-
-  pdf.addPage();
-  pdf.text("Printable Clues",10,20);
-  h.clues.forEach((c,i)=>pdf.text(`${i+1}. ${cleanText(c)}`,10,30+i*10));
-
-  pdf.save(`${h.name}.pdf`);
-}
-</script>
-</body>
-</html>
-
+  const show=(title,text)=>{
+    app.innerHTML=`
+      <div class="center-screen">
+        <h1>${title}</h1>
+        <p>${text}</p>
+      </div>
+      <div class="bottom-bar">
+        <button onclick="startC
