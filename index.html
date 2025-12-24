@@ -26,18 +26,15 @@ body{
 
 .card{max-width:900px;margin:auto;padding:20px;}
 .hunt{background:var(--card);padding:12px;border-radius:10px;margin-bottom:12px;border:1px solid #ddd;}
-.admin{border:2px dashed #dc2626;}
 button{padding:10px 16px;border-radius:10px;border:none;background:var(--accent);color:white;font-size:16px;cursor:pointer;}
 button.secondary{background:#6b7280;}
-button.danger{background:#dc2626;}
 textarea,input,select{width:100%;padding:10px;margin-bottom:10px;font-size:16px;}
 .center-screen{min-height:100vh;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;padding:20px;}
 .center-screen h1{font-size:2.2rem;}
 .center-screen p{font-size:1.5rem;max-width:800px;}
 .bottom-bar{position:fixed;bottom:0;left:0;right:0;padding:16px;display:flex;justify-content:center;gap:12px;}
 video{width:100%;max-width:420px;border-radius:12px;margin-top:12px;}
-.admin-footer{margin-top:20px;padding-top:10px;border-top:1px solid #ccc;font-size:14px;}
-.admin-footer a{color:#dc2626;text-decoration:none;font-weight:bold;}
+.admin{border:2px dashed #dc2626;}
 </style>
 </head>
 
@@ -49,31 +46,16 @@ video{width:100%;max-width:420px;border-radius:12px;margin-top:12px;}
 <script src="https://cdn.jsdelivr.net/npm/jsqr/dist/jsQR.js"></script>
 
 <script>
-/* ========= CONFIG ========= */
-const ADMIN_PIN = "318933";
-const ADMIN_EMAIL = "Hayden_333@hotmail.com";
-
 /* ========= UTIL ========= */
+function cleanText(t){return t.replace(/[‘’]/g,"'").replace(/[“”]/g,'"');}
 function uid(){return Math.random().toString(36).slice(2,9);}
 
 /* ========= ADMIN ========= */
-let isAdmin = sessionStorage.getItem("admin")==="1";
-
+let isAdmin = localStorage.getItem("admin")==="1";
 function toggleAdmin(){
-  if(isAdmin){
-    isAdmin=false;
-    sessionStorage.removeItem("admin");
-    home();
-    return;
-  }
-  const pin = prompt("Enter Admin PIN:");
-  if(pin === ADMIN_PIN){
-    isAdmin=true;
-    sessionStorage.setItem("admin","1");
-    home();
-  }else{
-    alert("Incorrect PIN");
-  }
+  isAdmin=!isAdmin;
+  localStorage.setItem("admin",isAdmin?"1":"0");
+  home();
 }
 
 /* ========= DEFAULT HUNTS ========= */
@@ -83,8 +65,8 @@ const DEFAULT_HUNTS={
   hacker:{name:"System Breach",theme:"dark",intro:"⚠️ Incoming transmission… system access required.",clues:["Device that controls all others.","Passwords written but not digital.","Cold data storage.","Where commands are typed.","Single click changes everything.","Primary power source.","Clothes reset location.","Backup storage area.","Display output surface.","Permission checkpoint.","Hidden encrypted space.","Logs of activity.","User rest zone.","Final access node.","Root access payload location."],finish:"✅ SYSTEM BREACH COMPLETE — ACCESS GRANTED."}
 };
 
-let userHunts = JSON.parse(localStorage.getItem("userHunts")||"{}");
-let HUNTS = {...DEFAULT_HUNTS,...userHunts};
+let userHunts=JSON.parse(localStorage.getItem("userHunts")||"{}");
+let HUNTS={...DEFAULT_HUNTS,...userHunts};
 function save(){localStorage.setItem("userHunts",JSON.stringify(userHunts));}
 
 /* ========= ROUTER ========= */
@@ -98,13 +80,13 @@ else home();
 
 /* ========= HOME ========= */
 function home(){
+  app.className="";
   app.innerHTML=`
     <h1>QR Scavenger Hunts</h1>
     <button onclick="location='?new=1'">➕ Create New Hunt</button>
     <button class="secondary" onclick="toggleAdmin()">
       ${isAdmin?"🔓 Exit Admin":"🔒 Admin"}
     </button>
-
     ${Object.entries(HUNTS)
       .sort((a,b)=>a[1].name.localeCompare(b[1].name))
       .map(([k,h])=>`
@@ -112,18 +94,9 @@ function home(){
           <h3>${h.name}</h3>
           <button onclick="generatePDF('${k}')">🖨 Generate QR PDF</button>
           ${!DEFAULT_HUNTS[k]?`<button class="secondary" onclick="location='?edit=${k}'">✏ Modify</button>`:""}
-          ${isAdmin && !DEFAULT_HUNTS[k]?`<button class="danger" onclick="deleteHunt('${k}')">🗑 Delete</button>`:""}
+          ${isAdmin && !DEFAULT_HUNTS[k]?`<button style="background:#dc2626" onclick="deleteHunt('${k}')">🗑 Delete</button>`:""}
         </div>
       `).join("")}
-
-    ${isAdmin?`
-      <div class="admin-footer">
-        Admin contact:
-        <a href="mailto:${ADMIN_EMAIL}?subject=QR%20Scavenger%20Hunt%20Admin%20Request">
-          ${ADMIN_EMAIL}
-        </a>
-      </div>
-    `:""}
   `;
 }
 
@@ -174,8 +147,82 @@ function saveHunt(k){
   home();
 }
 
-/* ========= PLAY + CAMERA + PDF ========= */
-/* (unchanged from previous version – kept stable intentionally) */
+/* ========= PLAY ========= */
+function play(){
+  const key=q.get("play");
+  const h=HUNTS[key];
+  const step=parseInt(q.get("s"));
+  document.body.className="theme-"+h.theme;
+  const store="p-"+key;
+  let p=parseInt(localStorage.getItem(store)||"-1");
+
+  const show=(title,text)=>{
+    app.innerHTML=`
+      <div class="center-screen">
+        <h1>${title}</h1><p>${text}</p>
+      </div>
+      <div class="bottom-bar"><button onclick="startCamera()">📷 Scan QR</button></div>
+      <video id="video" hidden></video>`;
+  };
+
+  if(step===0 && p===-1){localStorage.setItem(store,0);return show("🎁 Invitation","You have been invited to complete a treasure hunt.");}
+  if(step===1 && p===0){localStorage.setItem(store,1);return show("🎉 Message",h.intro);}
+
+  if(step===p+1){
+    localStorage.setItem(store,step);
+    const i=step-2;
+    if(i>=0 && i<h.clues.length) return show(`Clue ${i+1}`,h.clues[i]);
+    if(step===h.clues.length+2){localStorage.removeItem(store);return show("🎉 Finished!",h.finish);}
+  }
+
+  app.innerHTML=`
+    <div class="center-screen"><h1>❌ Wrong QR</h1><p>That code is not correct.</p></div>
+    <div class="bottom-bar"><button class="secondary" onclick="location='?play=${key}&s=${p}'">⬅ Back</button></div>`;
+}
+
+/* ========= CAMERA ========= */
+async function startCamera(){
+  const v=document.getElementById("video");
+  v.hidden=false;
+  const s=await navigator.mediaDevices.getUserMedia({video:{facingMode:"environment"}});
+  v.srcObject=s;v.play();
+  const c=document.createElement("canvas"),x=c.getContext("2d");
+  (function scan(){
+    if(v.readyState===v.HAVE_ENOUGH_DATA){
+      c.width=v.videoWidth;c.height=v.videoHeight;
+      x.drawImage(v,0,0);
+      const d=x.getImageData(0,0,c.width,c.height);
+      const qr=jsQR(d.data,c.width,c.height);
+      if(qr){location.href=qr.data;return;}
+    }
+    requestAnimationFrame(scan);
+  })();
+}
+
+/* ========= PDF ========= */
+async function generatePDF(k){
+  const {jsPDF}=window.jspdf;
+  const pdf=new jsPDF();
+  const h=HUNTS[k];
+  const base=location.origin+location.pathname;
+
+  async function page(title,url){
+    pdf.addPage();
+    pdf.text(title,10,20);
+    const c=document.createElement("canvas");
+    await QRCode.toCanvas(c,url,{width:300});
+    pdf.addImage(c.toDataURL(),"PNG",30,40,150,150);
+  }
+
+  pdf.text(h.name,10,20);
+  pdf.text("Print and place these QR codes in order.",10,30);
+
+  await page("START QR",`${base}?play=${k}&s=0`);
+  await page("INTRO QR",`${base}?play=${k}&s=1`);
+  for(let i=0;i<h.clues.length;i++) await page(`Clue ${i+1}`,`${base}?play=${k}&s=${i+2}`);
+  await page("FINISH QR",`${base}?play=${k}&s=${h.clues.length+2}`);
+  pdf.save(`${h.name}.pdf`);
+}
 </script>
 </body>
 </html>
