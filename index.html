@@ -1,104 +1,4 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>QR Scavenger Hunts</title>
-
-<style>
-:root{
-  --bg:#f4f6f8;
-  --card:#ffffff;
-  --accent:#2563eb;
-  --text:#111827;
-}
-body{
-  margin:0;
-  font-family: system-ui,-apple-system,sans-serif;
-  background:var(--bg);
-  color:var(--text);
-}
-.theme-blue{--accent:#2563eb;}
-.theme-red{--accent:#dc2626;}
-.theme-green{--accent:#16a34a;}
-.theme-purple{--accent:#7c3aed;}
-.theme-dark{
-  --bg:#0f172a;
-  --card:#020617;
-  --text:#e5e7eb;
-  --accent:#38bdf8;
-}
-.card{max-width:900px;margin:auto;padding:20px;}
-.hunt{
-  background:var(--card);
-  padding:14px;
-  border-radius:12px;
-  margin-bottom:14px;
-  border:1px solid #ddd;
-}
-button{
-  padding:12px 18px;
-  border-radius:12px;
-  border:none;
-  background:var(--accent);
-  color:white;
-  font-size:16px;
-  cursor:pointer;
-}
-button.secondary{background:#6b7280;}
-button.danger{background:#dc2626;}
-textarea,input,select{
-  width:100%;
-  padding:10px;
-  margin-bottom:10px;
-  font-size:16px;
-}
-.center-screen{
-  min-height:100vh;
-  display:flex;
-  flex-direction:column;
-  justify-content:center;
-  align-items:center;
-  text-align:center;
-  padding:20px;
-}
-.center-screen h1{font-size:2.3rem;}
-.center-screen p{font-size:1.6rem;max-width:800px;}
-.bottom-bar{
-  position:fixed;
-  bottom:0;
-  left:0;
-  right:0;
-  padding:16px;
-  display:flex;
-  justify-content:center;
-}
-video{
-  width:100%;
-  max-width:420px;
-  border-radius:12px;
-  margin-top:12px;
-}
-</style>
-</head>
-
-<body>
-<div class="card" id="app"></div>
-
-<script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/jsqr/dist/jsQR.js"></script>
-
-<script>
-/* ================= CONFIG ================= */
-const ADMIN_PIN="318933";
-
-/* ================= STATE ================= */
-let isAdmin=sessionStorage.getItem("admin")==="1";
-let scanActive=false;
-
-/* ================= DEFAULT HUNTS ================= */
-const DEFAULT_HUNTS={
+const DEFAULT_HUNTS = {
   escape:{
     name:"Escape the House",
     theme:"blue",
@@ -108,199 +8,58 @@ const DEFAULT_HUNTS={
       "I have pages but no homework.",
       "I keep food safe and cold.",
       "I go round and round but never get dizzy.",
-      "I have hands but no arms."
+      "I have hands but no arms.",
+      "I hide your feet when you're not home.",
+      "I'm soft, comfy, and steal naps.",
+      "I light the dark when switched on.",
+      "I'm full of secrets behind closed doors.",
+      "The prize is hidden where valuables stay safe."
     ],
     finish:"🎉 Congratulations! You escaped the house!"
+  },
+
+  fortnite:{
+    name:"Fortnite IRL",
+    theme:"purple",
+    intro:"Drop in! Your real-world Fortnite challenge starts now 🎮",
+    clues:[
+      "Controllers land here after a match.",
+      "Drinks restore shields here.",
+      "Shoes hide here after the storm.",
+      "Materials are stored with tools.",
+      "The squad gathers here.",
+      "You can’t win without sleep.",
+      "Secrets behind closed doors.",
+      "Devices recharge here.",
+      "High ground advantage.",
+      "Where battles are watched.",
+      "Snacks disappear here.",
+      "Victory Royale location."
+    ],
+    finish:"🏆 Victory Royale! You completed the hunt!"
+  },
+
+  hacker:{
+    name:"System Breach",
+    theme:"dark",
+    intro:"⚠️ Incoming transmission… system access required.",
+    clues:[
+      "Device that controls all others.",
+      "Passwords written but not digital.",
+      "Cold data storage.",
+      "Where commands are typed.",
+      "Single click changes everything.",
+      "Primary power source.",
+      "Clothes reset location.",
+      "Backup storage area.",
+      "Display output surface.",
+      "Permission checkpoint.",
+      "Hidden encrypted space.",
+      "Logs of activity.",
+      "User rest zone.",
+      "Final access node.",
+      "Root access payload location."
+    ],
+    finish:"✅ SYSTEM BREACH COMPLETE — ACCESS GRANTED."
   }
 };
-
-let userHunts=JSON.parse(localStorage.getItem("userHunts")||"{}");
-let HUNTS={...DEFAULT_HUNTS,...userHunts};
-
-const q=new URLSearchParams(location.search);
-const app=document.getElementById("app");
-
-/* ================= ROUTER ================= */
-if(q.get("play")) play();
-else if(q.get("view")) viewHunt(q.get("view"));
-else if(q.get("edit")) editHunt(q.get("edit"));
-else if(q.get("new")) editHunt();
-else home();
-
-/* ================= HOME ================= */
-function home(){
-  document.body.className="";
-  app.innerHTML=`
-    <h1>QR Scavenger Hunts</h1>
-    <button onclick="location='?new=1'">➕ Create New Hunt</button>
-    <button class="secondary" onclick="toggleAdmin()">${isAdmin?"🔓 Exit Admin":"🔒 Admin"}</button>
-
-    ${Object.entries(HUNTS).map(([k,h])=>`
-      <div class="hunt">
-        <h3>${h.name}</h3>
-        <button onclick="generatePDF('${k}')">🖨 Generate QR PDF</button>
-        <button class="secondary" onclick="location='?view=${k}'">👁 View Hunt</button>
-        ${isAdmin?`<button class="secondary" onclick="location='?edit=${k}'">✏ Modify</button>`:""}
-        ${isAdmin && !DEFAULT_HUNTS[k]?`<button class="danger" onclick="deleteHunt('${k}')">🗑 Delete</button>`:""}
-      </div>
-    `).join("")}
-  `;
-}
-
-function toggleAdmin(){
-  if(isAdmin){
-    isAdmin=false;
-    sessionStorage.removeItem("admin");
-    home(); return;
-  }
-  if(prompt("Admin PIN")===ADMIN_PIN){
-    isAdmin=true;
-    sessionStorage.setItem("admin","1");
-    home();
-  } else alert("Incorrect PIN");
-}
-
-function deleteHunt(k){
-  if(confirm("Delete this hunt?")){
-    delete userHunts[k];
-    delete HUNTS[k];
-    localStorage.setItem("userHunts",JSON.stringify(userHunts));
-    home();
-  }
-}
-
-/* ================= VIEW ================= */
-function viewHunt(k){
-  const h=HUNTS[k];
-  document.body.className="theme-"+h.theme;
-  app.innerHTML=`
-    <h2>${h.name}</h2>
-    <h3>Intro</h3><p>${h.intro}</p>
-    <h3>Clues</h3>
-    <ol>${h.clues.map(c=>`<li>${c}</li>`).join("")}</ol>
-    <h3>Finish</h3><p>${h.finish}</p>
-    <button class="secondary" onclick="home()">⬅ Back</button>
-  `;
-}
-
-/* ================= PLAY ================= */
-function play(){
-  const key=q.get("play");
-  const h=HUNTS[key];
-  const step=parseInt(q.get("s"));
-  const store="p-"+key;
-  let p=parseInt(localStorage.getItem(store)||"-1");
-
-  document.body.className="theme-"+h.theme;
-
-  function show(title,text){
-    app.innerHTML=`
-      <div class="center-screen">
-        <h1>${title}</h1>
-        <p>${text}</p>
-        <video id="video" hidden></video>
-      </div>
-      <div class="bottom-bar">
-        <button onclick="startCamera()">📷 Scan QR Code</button>
-      </div>
-    `;
-  }
-
-  if(step===0 && p===-1){localStorage.setItem(store,0);return show("🎁 Invitation","You have been invited to complete a treasure hunt.");}
-  if(step===1 && p===0){localStorage.setItem(store,1);return show("🎉 Message",h.intro);}
-
-  if(step===p+1){
-    localStorage.setItem(store,step);
-    const i=step-2;
-    if(i>=0 && i<h.clues.length) return show(`Clue ${i+1}`,h.clues[i]);
-    if(step===h.clues.length+2){
-      localStorage.removeItem(store);
-      return show("🎉 Finished!",h.finish);
-    }
-  }
-
-  flashWrongQR(key,p);
-}
-
-/* ================= CAMERA ================= */
-async function startCamera(){
-  const video=document.getElementById("video");
-  video.hidden=false;
-
-  if(!video.srcObject){
-    const stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:"environment"}});
-    video.srcObject=stream;
-    video.play();
-  }
-
-  scanActive=true;
-  const canvas=document.createElement("canvas");
-  const ctx=canvas.getContext("2d");
-
-  (function scan(){
-    if(!scanActive) return;
-    if(video.readyState===video.HAVE_ENOUGH_DATA){
-      canvas.width=video.videoWidth;
-      canvas.height=video.videoHeight;
-      ctx.drawImage(video,0,0);
-      const img=ctx.getImageData(0,0,canvas.width,canvas.height);
-      const qr=jsQR(img.data,canvas.width,canvas.height);
-      if(qr){
-        scanActive=false;
-        location.href=qr.data;
-        return;
-      }
-    }
-    requestAnimationFrame(scan);
-  })();
-}
-
-function flashWrongQR(key,p){
-  scanActive=false;
-  const o=document.createElement("div");
-  o.style.position="fixed";
-  o.style.inset="0";
-  o.style.background="rgba(220,38,38,0.95)";
-  o.style.color="white";
-  o.style.display="flex";
-  o.style.alignItems="center";
-  o.style.justifyContent="center";
-  o.style.fontSize="2rem";
-  o.textContent="❌ Wrong QR Code";
-  document.body.appendChild(o);
-
-  setTimeout(()=>{
-    o.remove();
-    location.href=`?play=${key}&s=${p}`;
-  },3000);
-}
-
-/* ================= PDF ================= */
-async function generatePDF(k){
-  const {jsPDF}=window.jspdf;
-  const pdf=new jsPDF();
-  const h=HUNTS[k];
-  const base=location.origin+location.pathname;
-
-  async function page(title,url){
-    pdf.addPage();
-    pdf.text(title,10,20);
-    const c=document.createElement("canvas");
-    await QRCode.toCanvas(c,url,{width:300});
-    pdf.addImage(c.toDataURL(),"PNG",30,40,150,150);
-  }
-
-  pdf.text(h.name,10,20);
-  pdf.text("Scan QR codes in order.",10,30);
-
-  await page("START",`${base}?play=${k}&s=0`);
-  await page("INTRO",`${base}?play=${k}&s=1`);
-  for(let i=0;i<h.clues.length;i++)
-    await page(`Clue ${i+1}`,`${base}?play=${k}&s=${i+2}`);
-  await page("FINISH",`${base}?play=${k}&s=${h.clues.length+2}`);
-
-  pdf.save(`${h.name}.pdf`);
-}
-</script>
-</body>
-</html>
