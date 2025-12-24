@@ -12,7 +12,7 @@ const hunts = [
         { clue: "I’m soft, I’m comfy, and I steal naps. People sit on me 'just for a minute'.", answer: "couch" },
         { clue: "I light up the dark but disappear by day. Flip me on.", answer: "lamp" },
         { clue: "I’m full of secrets, but I don’t talk. You knock before opening me.", answer: "bedroom door" },
-        { clue: "You cracked every lock! The final key is hidden where treasures are kept safe.", answer: "locked box" }
+        { clue: "You cracked every lock! The final key is hidden where treasures are kept safe. See Mum and Dad", answer: "locked box" }
     ],
     // Fortnite IRL Hunt (12 clues)
     [
@@ -27,7 +27,7 @@ const hunts = [
         { clue: "High ground wins games. Go where you can see the whole room.", answer: "stairs" },
         { clue: "Final circle. Only one remains. Where battles are watched, not played.", answer: "tv" },
         { clue: "One last challenge… Look where snacks disappear during long sessions.", answer: "pantry" },
-        { clue: "VICTORY ROYALE 🏆 Claim your reward where legends are made.", answer: "prize location" }
+        { clue: "VICTORY ROYALE 🏆 Claim your reward where legends are made. See Mum and Dad", answer: "prize location" }
     ],
     // Hacker / System Breach Hunt (15 clues)
     [
@@ -45,7 +45,7 @@ const hunts = [
         { clue: "SYSTEM LOG Tracks everything that happens over time.", answer: "clock" },
         { clue: "USER PROFILE Where the operator rests.", answer: "bed" },
         { clue: "FINAL ACCESS NODE Only the admin reaches this point.", answer: "desk" },
-        { clue: "ROOT ACCESS GRANTED ACCESS GRANTED SYSTEM BREACHED Retrieve payload from secure location.", answer: "final prize" }
+        { clue: "ROOT ACCESS GRANTED ACCESS GRANTED SYSTEM BREACHED Retrieve payload from secure location. See Mum and Dad", answer: "final prize" }
     ]
 ];
 
@@ -137,6 +137,27 @@ function modifyHunt(huntIndex) {
         clueRow.appendChild(answerInput);
         modifyCluesContainer.appendChild(clueRow);
     });
+}
+
+// Function to save changes to the clues
+function saveChanges() {
+    const modifiedClues = [];
+    const clueRows = document.querySelectorAll('#modify-clues .clue-row');
+
+    clueRows.forEach((row, index) => {
+        const questionInput = row.querySelector('input');
+        const answerInput = row.querySelectorAll('input')[1]; // Assuming there are two input fields (clue, answer)
+
+        modifiedClues.push({
+            clue: questionInput.value,
+            answer: answerInput.value
+        });
+    });
+
+    // Save modified clues to localStorage (or handle as needed)
+    localStorage.setItem('modifiedHunt', JSON.stringify(modifiedClues));
+
+    alert('Changes saved successfully!');
 }
 
 // Function to go back to the hunt selection screen
