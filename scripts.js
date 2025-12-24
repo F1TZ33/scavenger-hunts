@@ -1,7 +1,7 @@
 let currentHunt = -1;
 let currentClueIndex = 0;
 const hunts = [
-    // Escape the House Hunt (10 clues)
+    // Ivy's Escape the House Hunt (10 clues)
     [
         { clue: "I show your face but I’m not a photo. I hang on walls and doors. Where am I?", answer: "mirror" },
         { clue: "I have pages but no homework. I’m quiet unless you drop me. I live where stories sleep.", answer: "bookshelf" },
@@ -12,9 +12,9 @@ const hunts = [
         { clue: "I’m soft, I’m comfy, and I steal naps. People sit on me 'just for a minute'.", answer: "couch" },
         { clue: "I light up the dark but disappear by day. Flip me on.", answer: "lamp" },
         { clue: "I’m full of secrets, but I don’t talk. You knock before opening me.", answer: "bedroom door" },
-        { clue: "You cracked every lock! The final key is hidden where treasures are kept safe. See Mum and Dad", answer: "locked box" }
+        { clue: "You cracked every lock! The final key is hidden where treasures are kept safe. Your Colour is RED ", answer: "red" }
     ],
-    // Fortnite IRL Hunt (12 clues)
+    // Harley's Fortnite IRL Hunt (12 clues)
     [
         { clue: "You’ve dropped in. First loot location: Where controllers go when the game is off.", answer: "gaming desk" },
         { clue: "Shields up! Find the place where drinks recharge HP.", answer: "fridge" },
@@ -27,9 +27,9 @@ const hunts = [
         { clue: "High ground wins games. Go where you can see the whole room.", answer: "stairs" },
         { clue: "Final circle. Only one remains. Where battles are watched, not played.", answer: "tv" },
         { clue: "One last challenge… Look where snacks disappear during long sessions.", answer: "pantry" },
-        { clue: "VICTORY ROYALE 🏆 Claim your reward where legends are made. See Mum and Dad", answer: "prize location" }
+        { clue: "VICTORY ROYALE 🏆 Claim your reward where legends are made. Your colour is SILVER", answer: "silver" }
     ],
-    // Hacker / System Breach Hunt (15 clues)
+    // Tyson's Hacker / System Breach Hunt (15 clues)
     [
         { clue: "SYSTEM ONLINE Begin at the device that controls all others.", answer: "router" },
         { clue: "AUTHENTICATION REQUIRED Find where passwords are written but never stored digitally.", answer: "notebook" },
@@ -45,7 +45,7 @@ const hunts = [
         { clue: "SYSTEM LOG Tracks everything that happens over time.", answer: "clock" },
         { clue: "USER PROFILE Where the operator rests.", answer: "bed" },
         { clue: "FINAL ACCESS NODE Only the admin reaches this point.", answer: "desk" },
-        { clue: "ROOT ACCESS GRANTED ACCESS GRANTED SYSTEM BREACHED Retrieve payload from secure location. See Mum and Dad", answer: "final prize" }
+        { clue: "ROOT ACCESS GRANTED ACCESS GRANTED SYSTEM BREACHED Retrieve payload from secure location. Your colour is GREEN", answer: "green" }
     ]
 ];
 
@@ -53,11 +53,6 @@ const hunts = [
 document.getElementById('start-escape').addEventListener('click', () => startHunt(0));
 document.getElementById('start-fortnite').addEventListener('click', () => startHunt(1));
 document.getElementById('start-hacker').addEventListener('click', () => startHunt(2));
-
-// Event listeners to modify the hunt
-document.getElementById('modify-escape').addEventListener('click', () => modifyHunt(0));
-document.getElementById('modify-fortnite').addEventListener('click', () => modifyHunt(1));
-document.getElementById('modify-hacker').addEventListener('click', () => modifyHunt(2));
 
 // Function to start the hunt
 function startHunt(huntIndex) {
@@ -103,65 +98,4 @@ function nextClue() {
 function showCongratulations() {
     document.getElementById('hunt-screen').style.display = 'none';
     document.getElementById('congratulations-screen').style.display = 'block';
-}
-
-// Function to modify the hunt
-function modifyHunt(huntIndex) {
-    currentHunt = huntIndex;  // Set current hunt to the selected one
-    document.getElementById('index-screen').style.display = 'none';
-    document.getElementById('modify-screen').style.display = 'block';  // Show the modify screen
-
-    const modifyCluesContainer = document.getElementById('modify-clues');
-    modifyCluesContainer.innerHTML = '';  // Clear any previous form fields
-
-    // Loop through the clues and create form inputs to modify them
-    hunts[currentHunt].forEach((clue, index) => {
-        const clueRow = document.createElement('div');
-        clueRow.classList.add('clue-row');
-        
-        // Create the clue input
-        const questionInput = document.createElement('input');
-        questionInput.type = 'text';
-        questionInput.value = clue.clue;
-        questionInput.placeholder = `Clue ${index + 1}`;
-        questionInput.classList.add('modify-input');
-        
-        // Create the location input (Answer)
-        const answerInput = document.createElement('input');
-        answerInput.type = 'text';
-        answerInput.value = clue.answer;
-        answerInput.placeholder = `Location for Clue ${index + 1}`;
-        answerInput.classList.add('modify-input');
-        
-        clueRow.appendChild(questionInput);
-        clueRow.appendChild(answerInput);
-        modifyCluesContainer.appendChild(clueRow);
-    });
-}
-
-// Function to save changes to the clues
-function saveChanges() {
-    const modifiedClues = [];
-    const clueRows = document.querySelectorAll('#modify-clues .clue-row');
-
-    clueRows.forEach((row, index) => {
-        const questionInput = row.querySelector('input');
-        const answerInput = row.querySelectorAll('input')[1]; // Assuming there are two input fields (clue, answer)
-
-        modifiedClues.push({
-            clue: questionInput.value,
-            answer: answerInput.value
-        });
-    });
-
-    // Save modified clues to localStorage (or handle as needed)
-    localStorage.setItem('modifiedHunt', JSON.stringify(modifiedClues));
-
-    alert('Changes saved successfully!');
-}
-
-// Function to go back to the hunt selection screen
-function goBack() {
-    document.getElementById('modify-screen').style.display = 'none';
-    document.getElementById('index-screen').style.display = 'block';
 }
