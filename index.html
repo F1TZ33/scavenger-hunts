@@ -6,25 +6,12 @@
 <title>QR Scavenger Hunts</title>
 
 <style>
-body {
-  font-family: system-ui, sans-serif;
-  background: #f4f6f8;
-  padding: 20px;
-}
-.card {
-  max-width: 900px;
-  margin: auto;
-  background: white;
-  border-radius: 12px;
-  padding: 20px;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-}
-button { padding: 8px 14px; margin: 6px 6px 6px 0; }
-textarea { width: 100%; min-height: 60px; }
-input[type="text"] { width: 100%; padding: 8px; margin-bottom: 12px; }
-.hunt { border: 1px solid #ddd; padding: 12px; border-radius: 8px; margin-bottom: 12px; }
-.success { background:#e7f6e7;padding:12px;border-radius:8px; }
-.error { background:#ffe5e5;padding:12px;border-radius:8px; }
+body { font-family: system-ui, sans-serif; background:#f4f6f8; padding:20px; }
+.card { max-width:900px; margin:auto; background:#fff; padding:20px; border-radius:12px; }
+.hunt { border:1px solid #ddd; padding:12px; border-radius:8px; margin-bottom:12px; }
+button { margin:4px; padding:6px 12px; }
+input, textarea { width:100%; margin-bottom:10px; padding:8px; }
+.error { background:#ffe5e5; padding:10px; border-radius:6px; }
 </style>
 </head>
 
@@ -35,191 +22,172 @@ input[type="text"] { width: 100%; padding: 8px; margin-bottom: 12px; }
 <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
 
 <script>
-/* =========================
-   PDF TEXT SANITISER
-========================= */
+/* =====================
+   HELPERS
+===================== */
 function cleanText(t){
-  return t
-    .replace(/[‘’]/g,"'")
-    .replace(/[“”]/g,'"')
-    .replace(/–/g,"-")
-    .replace(/…/g,"...");
+  return t.replace(/[‘’]/g,"'").replace(/[“”]/g,'"');
 }
+function uid(){ return Math.random().toString(36).slice(2,9); }
 
-/* =========================
-   FULL STARTER HUNTS
-========================= */
+/* =====================
+   DEFAULT HUNTS
+===================== */
 const DEFAULT_HUNTS = {
-  escape: {
-    name: "Escape the House (Age 11)",
-    clues: [
-      "I show your face but I’m not a photo.",
-      "I have pages but no homework.",
-      "I keep food safe and cold.",
-      "I go round and round but never get dizzy.",
-      "I have hands but no arms.",
-      "I hide your feet when you’re not home.",
-      "I’m soft, comfy, and steal naps.",
-      "I light the dark when switched on.",
-      "I’m full of secrets behind closed doors.",
-      "The prize is hidden where valuables stay safe."
-    ]
-  },
-  fortnite: {
-    name: "Fortnite IRL – Victory Royale (Age 13)",
-    clues: [
-      "Controllers land here after a match.",
-      "Drinks restore shields here.",
-      "Shoes hide here after the storm.",
-      "Materials are stored with tools.",
-      "The squad gathers here.",
-      "You can’t win without sleep.",
-      "Secrets behind closed doors.",
-      "Devices recharge here.",
-      "High ground advantage.",
-      "Where battles are watched.",
-      "Snacks disappear here.",
-      "🏆 Victory Royale location."
-    ]
-  },
-  hacker: {
-    name: "System Breach (Age 19)",
-    clues: [
-      "Device that controls all others.",
-      "Passwords written but not digital.",
-      "Cold data storage.",
-      "Where commands are typed.",
-      "Single click changes everything.",
-      "Primary power source.",
-      "Clothes reset location.",
-      "Backup storage area.",
-      "Display output surface.",
-      "Permission checkpoint.",
-      "Hidden encrypted space.",
-      "Logs of activity.",
-      "User rest zone.",
-      "Final access node.",
-      "Root access payload location."
-    ]
-  }
+  escape:{name:"Escape the House",clues:[
+    "I show your face but I'm not a photo.",
+    "I have pages but no homework.",
+    "I keep food safe and cold.",
+    "I go round and round but never get dizzy.",
+    "I have hands but no arms.",
+    "I hide your feet when you're not home.",
+    "I'm soft, comfy, and steal naps.",
+    "I light the dark when switched on.",
+    "I'm full of secrets behind closed doors.",
+    "The prize is hidden where valuables stay safe."
+  ]},
+  fortnite:{name:"Fortnite IRL",clues:[
+    "Controllers land here after a match.",
+    "Drinks restore shields here.",
+    "Shoes hide here after the storm.",
+    "Materials are stored with tools.",
+    "The squad gathers here.",
+    "You can’t win without sleep.",
+    "Secrets behind closed doors.",
+    "Devices recharge here.",
+    "High ground advantage.",
+    "Where battles are watched.",
+    "Snacks disappear here.",
+    "Victory Royale location."
+  ]},
+  hacker:{name:"System Breach",clues:[
+    "Device that controls all others.",
+    "Passwords written but not digital.",
+    "Cold data storage.",
+    "Where commands are typed.",
+    "Single click changes everything.",
+    "Primary power source.",
+    "Clothes reset location.",
+    "Backup storage area.",
+    "Display output surface.",
+    "Permission checkpoint.",
+    "Hidden encrypted space.",
+    "Logs of activity.",
+    "User rest zone.",
+    "Final access node.",
+    "Root access payload location."
+  ]}
 };
 
-/* =========================
+/* =====================
    STORAGE
-========================= */
-const userHunts = JSON.parse(localStorage.getItem("userHunts")) || {};
-const HUNTS = { ...DEFAULT_HUNTS, ...userHunts };
-
-function saveUserHunts(){
-  const out = {};
-  Object.keys(HUNTS).forEach(k=>{
-    if(!DEFAULT_HUNTS[k]) out[k] = HUNTS[k];
-  });
-  localStorage.setItem("userHunts", JSON.stringify(out));
+===================== */
+let userHunts = JSON.parse(localStorage.getItem("userHunts")||"{}");
+let HUNTS = {...DEFAULT_HUNTS, ...userHunts};
+function save(){
+  localStorage.setItem("userHunts", JSON.stringify(userHunts));
 }
 
-/* =========================
+/* =====================
    ROUTER
-========================= */
-const params = new URLSearchParams(location.search);
-const app = document.getElementById("app");
-const huntKey = params.get("h");
-const step = parseInt(params.get("s"),10);
+===================== */
+const q=new URLSearchParams(location.search);
+const app=document.getElementById("app");
 
-if(huntKey && !isNaN(step)) runHunt();
-else runHome();
+if(q.get("play")) runHunt();
+else if(q.get("edit")) editHunt(q.get("edit"));
+else if(q.get("new")) createHunt();
+else home();
 
-/* =========================
-   HOME (ADULT / SETUP)
-========================= */
-function runHome(){
-  app.innerHTML = `
+/* =====================
+   HOME
+===================== */
+function home(){
+  app.innerHTML=`
     <h1>QR Scavenger Hunts</h1>
-    <p><strong>Adults:</strong> Click Start to generate QR codes.<br>
-    <strong>Players:</strong> Scan the START QR.</p>
-
-    ${Object.entries(HUNTS)
-      .sort((a,b)=>a[1].name.localeCompare(b[1].name))
-      .map(([k,h])=>`
-        <div class="hunt">
-          <h2>${h.name}</h2>
-          <button onclick="generatePDF('${k}',HUNTS['${k}'])">
-            🖨 Start / Generate QR Pack
-          </button>
-        </div>
-      `).join("")}
+    <button onclick="location='?new=1'">➕ Create New Hunt</button>
+    ${Object.entries(HUNTS).sort((a,b)=>a[1].name.localeCompare(b[1].name)).map(([k,h])=>`
+      <div class="hunt">
+        <h3>${h.name}</h3>
+        <button onclick="generatePDF('${k}')">🖨 Generate QR PDF</button>
+        ${DEFAULT_HUNTS[k]?'':`<button onclick="location='?edit=${k}'">✏ Modify</button>`}
+      </div>
+    `).join("")}
   `;
 }
 
-/* =========================
-   PLAYER MODE
-========================= */
-function runHunt(){
-  const h = HUNTS[huntKey];
-  if(!h) return app.innerHTML="<div class='error'>Invalid hunt</div>";
+/* =====================
+   CREATE / EDIT
+===================== */
+function createHunt(existingKey){
+  const hunt=existingKey?HUNTS[existingKey]:{name:"",clues:[""]};
+  app.innerHTML=`
+    <h2>${existingKey?"Modify":"Create"} Hunt</h2>
+    <input id="name" value="${hunt.name}">
+    <div id="clues"></div>
+    <button onclick="addClue()">➕ Add Clue</button><br>
+    <button onclick="saveHunt('${existingKey||""}')">💾 Save</button>
+    <button onclick="home()">Cancel</button>
+  `;
+  hunt.clues.forEach(addClue);
+}
+function editHunt(k){ createHunt(k); }
 
-  const key="progress-"+huntKey;
-  let c=parseInt(localStorage.getItem(key),10);
-  if(isNaN(c)) c=-1;
-
-  if(step===0 && c===-1){
-    localStorage.setItem(key,0);
-    return app.innerHTML=`<h1>${h.name}</h1><p>${h.clues[0]}</p>`;
-  }
-
-  if(step===c+1){
-    localStorage.setItem(key,step);
-    return app.innerHTML=`<h1>${h.name}</h1><p>${h.clues[step]}</p>`;
-  }
-
-  app.innerHTML="<div class='error'>Wrong QR code. Try again.</div>";
+function addClue(text=""){
+  const d=document.createElement("textarea");
+  d.value=text;
+  document.getElementById("clues").appendChild(d);
 }
 
-/* =========================
-   PDF GENERATOR (FIXED)
-========================= */
-async function generatePDF(key,h){
-  const { jsPDF } = window.jspdf;
-  const pdf = new jsPDF();
-  const base = location.origin + location.pathname;
+function saveHunt(k){
+  const name=document.getElementById("name").value.trim();
+  const clues=[...document.querySelectorAll("textarea")].map(t=>t.value).filter(Boolean);
+  if(!name||!clues.length) return alert("Name and clues required");
+  if(!k) k=uid();
+  userHunts[k]={name,clues};
+  HUNTS[k]=userHunts[k];
+  save();
+  home();
+}
 
-  pdf.setFontSize(18);
+/* =====================
+   PLAY MODE
+===================== */
+function runHunt(){
+  const h=HUNTS[q.get("play")];
+  const s=parseInt(q.get("s"));
+  const key="p-"+q.get("play");
+  let c=parseInt(localStorage.getItem(key)||"-1");
+  if(s===0 && c===-1){localStorage.setItem(key,0);app.innerHTML=h.clues[0];return;}
+  if(s===c+1){localStorage.setItem(key,s);app.innerHTML=h.clues[s];return;}
+  app.innerHTML="<div class='error'>Wrong QR</div>";
+}
+
+/* =====================
+   PDF (FIXED)
+===================== */
+async function generatePDF(k){
+  const {jsPDF}=window.jspdf;
+  const pdf=new jsPDF();
+  const base=location.origin+location.pathname;
+  const h=HUNTS[k];
+
   pdf.text(cleanText(h.name),10,20);
 
-  pdf.setFontSize(12);
-  pdf.text(cleanText(
-`HOW TO PLAY
-
-1. Print this PDF
-2. Place the START QR where players begin
-3. Hide each next QR at the answer to the clue
-4. Players must scan in order`
-  ),10,35);
-
-  async function page(title,url){
+  async function page(t,u){
     pdf.addPage();
-    pdf.text(cleanText(title),10,20);
-    const canvas=document.createElement("canvas");
-    await QRCode.toCanvas(canvas,url,{width:300});
-    pdf.addImage(canvas.toDataURL(),"PNG",30,40,150,150);
+    pdf.text(t,10,20);
+    const c=document.createElement("canvas");
+    await QRCode.toCanvas(c,u,{width:300});
+    pdf.addImage(c.toDataURL(),"PNG",30,40,150,150);
   }
 
-  await page("START QR",`${base}?h=${key}&s=0`);
-  for(let i=0;i<h.clues.length;i++){
-    await page(`Clue ${i+1}`,`${base}?h=${key}&s=${i+1}`);
-  }
+  await page("START QR",`${base}?play=${k}&s=0`);
+  for(let i=0;i<h.clues.length;i++)
+    await page(`Clue ${i+1}`,`${base}?play=${k}&s=${i+1}`);
 
-  pdf.addPage();
-  pdf.text("Printable Clues",10,20);
-  let y=30;
-  h.clues.forEach((c,i)=>{
-    pdf.text(`Clue ${i+1}: ${cleanText(c)}`,10,y);
-    y+=12;
-  });
-
-  pdf.output("dataurlnewwindow");
+  pdf.save(`${h.name}.pdf`);
 }
 </script>
 </body>
 </html>
-
