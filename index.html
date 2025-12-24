@@ -321,24 +321,30 @@ function saveHunt(k){
 
 /* GENERATE PDF FUNCTION */
 async function generatePDF(k){
-  const {jsPDF} = window.jspdf;
+  const { jsPDF } = window.jspdf;
   const pdf = new jsPDF();
   const h = HUNTS[k];
   const base = location.origin + location.pathname;
 
+  // Function to generate each QR page
+  async function page(title, url) {
+    const c = document.createElement("canvas");
+    try {
+      await QRCode.toCanvas(c, url, { width: 300 });
+      const imgData = c.toDataURL(); // Convert canvas to image data
+      pdf.addPage(); // Add new page
+      pdf.text(title, 10, 20); // Title on top of the page
+      pdf.addImage(imgData, "PNG", 30, 40, 150, 150); // Add QR code image to PDF
+    } catch (error) {
+      console.error("Error generating QR code:", error);
+    }
+  }
+
+  // Set document title
   pdf.text(h.name, 10, 20);
   pdf.text("Print and place these QR codes in order.", 10, 30);
 
-  async function page(title, url){
-    pdf.addPage();
-    pdf.text(title, 10, 20);
-    
-    const c = document.createElement("canvas");
-    await QRCode.toCanvas(c, url, { width: 300 });
-    
-    pdf.addImage(c.toDataURL(), "PNG", 30, 40, 150, 150);
-  }
-
+  // Add each page (QR code) in sequence
   await page("START QR", `${base}?play=${k}&s=0`);
   await page("INTRO QR", `${base}?play=${k}&s=1`);
   for (let i = 0; i < h.clues.length; i++) {
@@ -346,6 +352,7 @@ async function generatePDF(k){
   }
   await page("FINISH QR", `${base}?play=${k}&s=${h.clues.length + 2}`);
 
+  // Save the PDF to the user's device
   pdf.save(`${h.name}.pdf`);
 }
 </script>
