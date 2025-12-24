@@ -318,8 +318,36 @@ function saveHunt(k){
 }
 
 /* ================= PLAY + CAMERA + PDF ================= */
-/* (unchanged from previous version — already tested working) */
 
+/* GENERATE PDF FUNCTION */
+async function generatePDF(k){
+  const {jsPDF} = window.jspdf;
+  const pdf = new jsPDF();
+  const h = HUNTS[k];
+  const base = location.origin + location.pathname;
+
+  pdf.text(h.name, 10, 20);
+  pdf.text("Print and place these QR codes in order.", 10, 30);
+
+  async function page(title, url){
+    pdf.addPage();
+    pdf.text(title, 10, 20);
+    
+    const c = document.createElement("canvas");
+    await QRCode.toCanvas(c, url, { width: 300 });
+    
+    pdf.addImage(c.toDataURL(), "PNG", 30, 40, 150, 150);
+  }
+
+  await page("START QR", `${base}?play=${k}&s=0`);
+  await page("INTRO QR", `${base}?play=${k}&s=1`);
+  for (let i = 0; i < h.clues.length; i++) {
+    await page(`Clue ${i + 1} QR`, `${base}?play=${k}&s=${i + 2}`);
+  }
+  await page("FINISH QR", `${base}?play=${k}&s=${h.clues.length + 2}`);
+
+  pdf.save(`${h.name}.pdf`);
+}
 </script>
 </body>
 </html>
