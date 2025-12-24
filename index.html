@@ -226,9 +226,12 @@ function home(){
       .map(([k,h])=>`
         <div class="hunt ${isAdmin && !isDefaultHunt(k)?'admin':''}">
           <h3>${h.name}</h3>
+          
+          <!-- Start and View buttons for each hunt -->
+          <button onclick="location='?play=${k}'">▶ Start Hunt</button>
+          <button class="secondary" onclick="location='?view=${k}'">👁 View Hunt</button>
 
           <button onclick="generatePDF('${k}')">🖨 Generate QR PDF</button>
-          <button class="secondary" onclick="location='?view=${k}'">👁 View Hunt</button>
 
           ${isAdmin ? `
             <button class="secondary" onclick="location='?edit=${k}'">✏ Modify</button>
@@ -364,3 +367,4 @@ async function generatePDF(k) {
 </script>
 </body>
 </html>
+
