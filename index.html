@@ -353,4 +353,8 @@ async function generatePDF(k){
   await page("FINISH QR", `${base}?play=${k}&s=${h.clues.length + 2}`);
 
   // Save the PDF to the user's device
-  pd
+  pdf.save(`${h.name}.pdf`);
+}
+</script>
+</body>
+</html>
