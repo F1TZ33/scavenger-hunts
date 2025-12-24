@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>QR Scavenger Hunt Builder</title>
+<title>QR Scavenger Hunts</title>
 
 <style>
 body {
@@ -13,34 +13,31 @@ body {
   padding: 20px;
 }
 .card {
-  max-width: 800px;
+  max-width: 900px;
   margin: auto;
   background: white;
   border-radius: 12px;
   padding: 20px;
   box-shadow: 0 4px 10px rgba(0,0,0,0.1);
 }
+h1, h2 { margin-top: 0; }
+button {
+  padding: 8px 14px;
+  margin: 6px 6px 6px 0;
+}
 textarea {
   width: 100%;
   min-height: 60px;
 }
-button {
-  padding: 10px 14px;
-  margin-top: 10px;
-}
-.qr {
-  margin: 10px 0;
-}
-.error {
-  background: #ffe5e5;
+.hunt {
+  border: 1px solid #ddd;
   padding: 12px;
   border-radius: 8px;
+  margin-bottom: 12px;
 }
-.success {
-  background: #e7f6e7;
-  padding: 12px;
-  border-radius: 8px;
-}
+.success { background: #e7f6e7; padding: 12px; border-radius: 8px; }
+.error { background: #ffe5e5; padding: 12px; border-radius: 8px; }
+.qr { margin-top: 10px; }
 </style>
 </head>
 
@@ -48,47 +45,120 @@ button {
 <div class="card" id="app"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
+
 <script>
-/* =========================
-   DEFAULT HUNTS (EDITABLE)
-========================= */
-let HUNTS = {
+/* ============================
+   STORED HUNTS (FULL CLUES)
+============================ */
+let HUNTS = JSON.parse(localStorage.getItem("hunts")) || {
+
   escape: {
-    name: "Escape the House",
+    name: "Escape the House (Age 11)",
     clues: [
-      "I show your face but I’m not a photo.",
-      "I have pages but no homework.",
-      "I keep food safe and cold.",
-      "I go round and round but never get dizzy."
+      "I show your face but I’m not a photo. I hang on walls and doors.",
+      "I have pages but no homework. I’m quiet unless you drop me.",
+      "I open wide but never talk. I keep food safe and cold.",
+      "I go round and round but never get dizzy. I clean but hate socks in pairs.",
+      "I have hands but no arms. I never clap, but I’m always right on time.",
+      "I hide your feet when you’re not home. I like pairs, but I’m often missing one.",
+      "I’m soft, I’m comfy, and I steal naps.",
+      "I light up the dark but disappear by day. Flip me on.",
+      "I’m full of secrets, but I don’t talk. You knock before opening me.",
+      "You cracked every lock! The final key is hidden where treasures are kept safe."
+    ]
+  },
+
+  fortnite: {
+    name: "Fortnite IRL – Victory Royale (Age 13)",
+    clues: [
+      "You’ve dropped in. First loot location: where controllers go when the game is off.",
+      "Shields up! Find the place where drinks recharge HP.",
+      "Storm incoming. Where do shoes hide when the storm hits outside?",
+      "You need mats. Wood, brick, metal… find where tools live.",
+      "Campfire deployed. Where the family gathers to chill.",
+      "Inventory check. You can’t win without sleep.",
+      "Chest nearby… where secrets are stored behind closed doors.",
+      "Reboot van activated. Where devices come back to life.",
+      "High ground wins games. Go where you can see the whole room.",
+      "Final circle. Where battles are watched, not played.",
+      "One last challenge… look where snacks disappear during long sessions.",
+      "🏆 VICTORY ROYALE! Claim your reward where legends are made."
+    ]
+  },
+
+  hacker: {
+    name: "System Breach (Age 19)",
+    clues: [
+      "SYSTEM ONLINE. Begin at the device that controls all others.",
+      "AUTHENTICATION REQUIRED. Find where passwords are written but never stored digitally.",
+      "DATA COLD STORAGE. Files preserved at low temperature.",
+      "INPUT DEVICE DETECTED. Where commands are typed, not spoken.",
+      "PERIPHERAL FOUND. One click can change everything.",
+      "POWER SOURCE. Without this, the system fails.",
+      "CACHE CLEARED. Where clothes are reset to default state.",
+      "BACKUP LOCATION. Where items are stored just in case.",
+      "DISPLAY OUTPUT. Pixels form reality here.",
+      "SECURITY CHECKPOINT. Entry requires permission.",
+      "ENCRYPTED STORAGE. Locked, hidden, not obvious.",
+      "SYSTEM LOG. Tracks everything that happens over time.",
+      "USER PROFILE. Where the operator rests.",
+      "FINAL ACCESS NODE. Only the admin reaches this point.",
+      "ROOT ACCESS GRANTED. SYSTEM BREACHED. Retrieve payload from secure location."
     ]
   }
+
 };
 
-/* =========================
-   URL PARAMS → HUNT MODE
-========================= */
 const params = new URLSearchParams(window.location.search);
+const mode = params.get("mode");
 const huntKey = params.get("h");
 const step = parseInt(params.get("s"), 10);
 const app = document.getElementById("app");
 
+/* ============================
+   ROUTER
+============================ */
 if (huntKey && !isNaN(step)) {
   runHuntMode();
+} else if (mode === "edit") {
+  runBuilder(huntKey);
+} else if (mode === "new") {
+  runNewHunt();
 } else {
-  runBuilderMode();
+  runHome();
 }
 
-/* =========================
-   BUILDER MODE
-========================= */
-function runBuilderMode() {
-  let hunt = HUNTS.escape;
+/* ============================
+   HOME DASHBOARD
+============================ */
+function runHome() {
+  app.innerHTML = `
+    <h1>QR Scavenger Hunts</h1>
+    <p>Select a hunt or create your own.</p>
+    ${Object.entries(HUNTS).map(([key, hunt]) => `
+      <div class="hunt">
+        <h2>${hunt.name}</h2>
+        <a href="?h=${key}&s=0"><button>▶ Start</button></a>
+        <a href="?mode=edit&h=${key}"><button>✏ Modify</button></a>
+      </div>
+    `).join("")}
+    <hr>
+    <a href="?mode=new"><button>➕ Create Your Own Hunt</button></a>
+  `;
+}
+
+/* ============================
+   BUILDER (EDIT)
+============================ */
+function runBuilder(key) {
+  const hunt = HUNTS[key];
+  if (!hunt) return runHome();
 
   app.innerHTML = `
-    <h1>Scavenger Hunt Builder</h1>
-    <p>Edit the clues below, then generate QR codes.</p>
+    <h1>Edit: ${hunt.name}</h1>
     <div id="clues"></div>
     <button onclick="addClue()">➕ Add Clue</button>
+    <button onclick="save()">💾 Save</button>
     <button onclick="generateQRs()">📦 Generate QR Codes</button>
     <div id="qrs"></div>
   `;
@@ -100,11 +170,122 @@ function runBuilderMode() {
     renderClues();
   };
 
-  window.generateQRs = async () => {
-    const base = window.location.origin + window.location.pathname;
-    const qrs = document.getElementById("qrs");
-    qrs.innerHTML = "<h2>QR Codes</h2>";
+  window.save = () => {
+    localStorage.setItem("hunts", JSON.stringify(HUNTS));
+    alert("Saved!");
+  };
 
-    // START QR
-    const startURL = `${base}?h=escape&s=0`;
-    qrs.innerHTML
+  window.generateQRs = () => generateQRs(key, hunt);
+
+  function renderClues() {
+    const div = document.getElementById("clues");
+    div.innerHTML = "";
+    hunt.clues.forEach((c, i) => {
+      div.innerHTML += `
+        <p>Clue ${i + 1}</p>
+        <textarea onchange="HUNTS['${key}'].clues[${i}] = this.value">${c}</textarea>
+      `;
+    });
+  }
+}
+
+/* ============================
+   NEW HUNT
+============================ */
+function runNewHunt() {
+  let temp = { name: "", clues: [] };
+
+  app.innerHTML = `
+    <h1>Create New Hunt</h1>
+    <p>Hunt name</p>
+    <input id="name" style="width:100%">
+    <div id="clues"></div>
+    <button onclick="add()">➕ Add Clue</button>
+    <button onclick="create()">Create Hunt</button>
+  `;
+
+  window.add = () => {
+    temp.clues.push("");
+    render();
+  };
+
+  window.create = () => {
+    const key = "hunt" + Date.now();
+    temp.name = document.getElementById("name").value;
+    HUNTS[key] = temp;
+    localStorage.setItem("hunts", JSON.stringify(HUNTS));
+    location.href = "?mode=edit&h=" + key;
+  };
+
+  function render() {
+    const div = document.getElementById("clues");
+    div.innerHTML = "";
+    temp.clues.forEach((c, i) => {
+      div.innerHTML += `
+        <p>Clue ${i + 1}</p>
+        <textarea onchange="temp.clues[${i}] = this.value">${c}</textarea>
+      `;
+    });
+  }
+}
+
+/* ============================
+   HUNT MODE
+============================ */
+function runHuntMode() {
+  const hunt = HUNTS[huntKey];
+  if (!hunt) return app.innerHTML = `<div class="error">Invalid hunt.</div>`;
+
+  const key = "progress-" + huntKey;
+  let current = parseInt(localStorage.getItem(key), 10);
+  if (isNaN(current)) current = -1;
+
+  if (step === 0 && current === -1) {
+    localStorage.setItem(key, 0);
+    return app.innerHTML = `
+      <h1>${hunt.name}</h1>
+      <div class="success">Instructions loaded. Clue 1 unlocked!</div>
+      <p>${hunt.clues[0]}</p>
+    `;
+  }
+
+  if (step === current + 1) {
+    localStorage.setItem(key, step);
+    return app.innerHTML = `
+      <h1>${hunt.name}</h1>
+      <div class="success">Correct!</div>
+      <p>${hunt.clues[step]}</p>
+    `;
+  }
+
+  app.innerHTML = `<div class="error">Wrong QR code. Try again.</div>`;
+}
+
+/* ============================
+   QR GENERATION
+============================ */
+async function generateQRs(key, hunt) {
+  const base = location.origin + location.pathname;
+  const qrs = document.getElementById("qrs");
+  qrs.innerHTML = "<h2>QR Codes</h2>";
+
+  await makeQR(`${base}?h=${key}&s=0`, "START", qrs);
+  for (let i = 0; i < hunt.clues.length; i++) {
+    await makeQR(`${base}?h=${key}&s=${i + 1}`, `Clue ${i + 1}`, qrs);
+  }
+}
+
+async function makeQR(url, label, container) {
+  const canvas = document.createElement("canvas");
+  await QRCode.toCanvas(canvas, url);
+  container.innerHTML += `
+    <div class="qr">
+      <strong>${label}</strong><br>
+      <img src="${canvas.toDataURL()}"><br>
+      <small>${url}</small>
+    </div>
+  `;
+}
+</script>
+</body>
+</html>
