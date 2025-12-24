@@ -17,6 +17,7 @@ body {
   background: white;
   border-radius: 12px;
   padding: 20px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
 }
 button { padding: 8px 14px; margin: 6px 6px 6px 0; }
 textarea { width: 100%; min-height: 60px; }
@@ -34,12 +35,20 @@ input[type="text"] { width: 100%; padding: 8px; margin-bottom: 12px; }
 <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
 
 <script>
-/* ===== PDF SAFE TEXT ===== */
+/* =========================
+   PDF TEXT SANITISER
+========================= */
 function cleanText(t){
-  return t.replace(/[‘’]/g,"'").replace(/[“”]/g,'"').replace(/–/g,"-");
+  return t
+    .replace(/[‘’]/g,"'")
+    .replace(/[“”]/g,'"')
+    .replace(/–/g,"-")
+    .replace(/…/g,"...");
 }
 
-/* ===== FULL STARTER HUNTS ===== */
+/* =========================
+   FULL STARTER HUNTS
+========================= */
 const DEFAULT_HUNTS = {
   escape: {
     name: "Escape the House (Age 11)",
@@ -95,62 +104,122 @@ const DEFAULT_HUNTS = {
   }
 };
 
-/* ===== STORAGE ===== */
+/* =========================
+   STORAGE
+========================= */
 const userHunts = JSON.parse(localStorage.getItem("userHunts")) || {};
 const HUNTS = { ...DEFAULT_HUNTS, ...userHunts };
+
 function saveUserHunts(){
-  const o={};
-  Object.keys(HUNTS).forEach(k=>{ if(!DEFAULT_HUNTS[k]) o[k]=HUNTS[k]; });
-  localStorage.setItem("userHunts",JSON.stringify(o));
+  const out = {};
+  Object.keys(HUNTS).forEach(k=>{
+    if(!DEFAULT_HUNTS[k]) out[k] = HUNTS[k];
+  });
+  localStorage.setItem("userHunts", JSON.stringify(out));
 }
 
-/* ===== ROUTER ===== */
-const p=new URLSearchParams(location.search);
-const app=document.getElementById("app");
-const mode=p.get("mode"), huntKey=p.get("h"), step=parseInt(p.get("s"),10);
+/* =========================
+   ROUTER
+========================= */
+const params = new URLSearchParams(location.search);
+const app = document.getElementById("app");
+const huntKey = params.get("h");
+const step = parseInt(params.get("s"),10);
+
 if(huntKey && !isNaN(step)) runHunt();
 else runHome();
 
-/* ===== HOME ===== */
+/* =========================
+   HOME (ADULT / SETUP)
+========================= */
 function runHome(){
-  app.innerHTML=`<h1>QR Scavenger Hunts</h1>
-  <p><b>Adults:</b> Click Start to generate QR codes.<br>
-  <b>Players:</b> Scan the START QR.</p>
-  ${Object.entries(HUNTS).map(([k,h])=>`
-    <div class="hunt">
-      <h2>${h.name}</h2>
-      <button onclick="generatePDF('${k}',HUNTS['${k}'])">🖨 Start / Generate QR Pack</button>
-    </div>`).join("")}`;
+  app.innerHTML = `
+    <h1>QR Scavenger Hunts</h1>
+    <p><strong>Adults:</strong> Click Start to generate QR codes.<br>
+    <strong>Players:</strong> Scan the START QR.</p>
+
+    ${Object.entries(HUNTS)
+      .sort((a,b)=>a[1].name.localeCompare(b[1].name))
+      .map(([k,h])=>`
+        <div class="hunt">
+          <h2>${h.name}</h2>
+          <button onclick="generatePDF('${k}',HUNTS['${k}'])">
+            🖨 Start / Generate QR Pack
+          </button>
+        </div>
+      `).join("")}
+  `;
 }
 
-/* ===== HUNT MODE ===== */
+/* =========================
+   PLAYER MODE
+========================= */
 function runHunt(){
-  const h=HUNTS[huntKey];
+  const h = HUNTS[huntKey];
   if(!h) return app.innerHTML="<div class='error'>Invalid hunt</div>";
-  const k="progress-"+huntKey;
-  let c=parseInt(localStorage.getItem(k),10); if(isNaN(c))c=-1;
-  if(step===0 && c===-1){localStorage.setItem(k,0); return app.innerHTML=`<h1>${h.name}</h1><p>${h.clues[0]}</p>`;}
-  if(step===c+1){localStorage.setItem(k,step); return app.innerHTML=`<h1>${h.name}</h1><p>${h.clues[step]}</p>`;}
-  app.innerHTML="<div class='error'>Wrong QR code</div>";
+
+  const key="progress-"+huntKey;
+  let c=parseInt(localStorage.getItem(key),10);
+  if(isNaN(c)) c=-1;
+
+  if(step===0 && c===-1){
+    localStorage.setItem(key,0);
+    return app.innerHTML=`<h1>${h.name}</h1><p>${h.clues[0]}</p>`;
+  }
+
+  if(step===c+1){
+    localStorage.setItem(key,step);
+    return app.innerHTML=`<h1>${h.name}</h1><p>${h.clues[step]}</p>`;
+  }
+
+  app.innerHTML="<div class='error'>Wrong QR code. Try again.</div>";
 }
 
-/* ===== PDF ===== */
+/* =========================
+   PDF GENERATOR (FIXED)
+========================= */
 async function generatePDF(key,h){
-  const pdf=new jspdf.jsPDF();
-  const base=location.origin+location.pathname;
+  const { jsPDF } = window.jspdf;
+  const pdf = new jsPDF();
+  const base = location.origin + location.pathname;
+
+  pdf.setFontSize(18);
   pdf.text(cleanText(h.name),10,20);
-  pdf.text(cleanText("Scan the START QR to begin."),10,35);
-  async function page(t,u){
-    pdf.addPage(); pdf.text(cleanText(t),10,20);
-    const c=document.createElement("canvas");
-    await QRCode.toCanvas(c,u,{width:300});
-    pdf.addImage(c.toDataURL(),"PNG",30,40,150,150);
+
+  pdf.setFontSize(12);
+  pdf.text(cleanText(
+`HOW TO PLAY
+
+1. Print this PDF
+2. Place the START QR where players begin
+3. Hide each next QR at the answer to the clue
+4. Players must scan in order`
+  ),10,35);
+
+  async function page(title,url){
+    pdf.addPage();
+    pdf.text(cleanText(title),10,20);
+    const canvas=document.createElement("canvas");
+    await QRCode.toCanvas(canvas,url,{width:300});
+    pdf.addImage(canvas.toDataURL(),"PNG",30,40,150,150);
   }
+
   await page("START QR",`${base}?h=${key}&s=0`);
-  for(let i=0;i<h.clues.length;i++)
+  for(let i=0;i<h.clues.length;i++){
     await page(`Clue ${i+1}`,`${base}?h=${key}&s=${i+1}`);
+  }
+
+  pdf.addPage();
+  pdf.text("Printable Clues",10,20);
+  let y=30;
+  h.clues.forEach((c,i)=>{
+    pdf.text(`Clue ${i+1}: ${cleanText(c)}`,10,y);
+    y+=12;
+  });
+
   pdf.output("dataurlnewwindow");
 }
 </script>
 </body>
 </html>
+
