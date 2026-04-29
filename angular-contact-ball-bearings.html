@@ -27,8 +27,8 @@
     <div id="application" class="angular-section"><h2>Application</h2><div class="card"><p>Content coming soon.</p></div></div>
     <div id="brands" class="angular-section"><h2>Brands</h2><div class="card"><p>Content coming soon.</p></div></div>
     <div id="suppliers" class="angular-section"><h2>Suppliers</h2><div class="card"><p>Content coming soon.</p></div></div>
-    <div id="brief" class="angular-section"><h2>Brief Rundown</h2><div class="loader-row"><button class="btn" onclick="loadDocx()">Load DOCX</button><span class="subtitle">Expected file: <code>data/angular-contact-ball-bearings-brief.docx</code></span></div><div id="docxOut" class="doc-content">Content coming soon.</div></div>
-    <div id="detailed" class="angular-section"><h2>Detailed Rundown</h2><div class="loader-row"><button class="btn" onclick="loadXlsx()">Load Excel</button><span class="subtitle">Expected file: <code>data/angular-contact-ball-bearings-detailed.xlsx</code></span></div><div id="xlsxOut" class="sheet-content">Content coming soon.</div></div>
+    <div id="brief" class="angular-section"><h2>Brief Rundown</h2><div id="docxOut" class="doc-content">Loading brief rundown…</div></div>
+    <div id="detailed" class="angular-section"><h2>Detailed Rundown</h2><div id="xlsxOut" class="sheet-content">Loading detailed rundown…</div></div>
   </section>
 </main>
 </div>
@@ -43,6 +43,8 @@ tabs.forEach(tab => tab.addEventListener('click', () => {
   tab.classList.add('active');
   document.getElementById(tab.dataset.target).classList.add('active');
   if(tab.dataset.target === 'images') buildGallery();
+  if(tab.dataset.target === 'brief') loadDocx();
+  if(tab.dataset.target === 'detailed') loadXlsx();
 }));
 function buildGallery(){
   const gallery = document.getElementById('gallery');
@@ -58,11 +60,40 @@ function buildGallery(){
 }
 async function loadDocx(){
   const out = document.getElementById('docxOut');
-  try{out.innerHTML = 'Loading DOCX...'; const res = await fetch('data/angular-contact-ball-bearings-brief.docx'); if(!res.ok) throw new Error('DOCX not found'); const arrayBuffer = await res.arrayBuffer(); const result = await mammoth.convertToHtml({arrayBuffer}); out.innerHTML = result.value || 'Content coming soon.';}catch(err){out.innerHTML = 'Content coming soon.';}
+  if(!out || out.dataset.loaded === '1') return;
+  try{
+    out.innerHTML = 'Loading brief rundown…';
+    const res = await fetch('downloads/products/angular-contact-ball-bearings/Angular_Contact_Ball_Bearings_Poster_Phase_2.docx', {cache:'no-store'});
+    if(!res.ok) throw new Error('DOCX not found');
+    const arrayBuffer = await res.arrayBuffer();
+    const result = await mammoth.convertToHtml({arrayBuffer});
+    out.innerHTML = result.value || '<p>No brief content found.</p>';
+    out.dataset.loaded = '1';
+  }catch(err){
+    out.innerHTML = '<p><strong>Unable to load brief rundown.</strong></p><p>Please check the source file exists at <code>downloads/products/angular-contact-ball-bearings/Angular_Contact_Ball_Bearings_Poster_Phase_2.docx</code>.</p>';
+    console.error(err);
+  }
 }
 async function loadXlsx(){
   const out = document.getElementById('xlsxOut');
-  try{out.innerHTML = 'Loading Excel...'; const res = await fetch('data/angular-contact-ball-bearings-detailed.xlsx'); if(!res.ok) throw new Error('XLSX not found'); const arrayBuffer = await res.arrayBuffer(); const wb = XLSX.read(arrayBuffer, {type:'array'}); let html = ''; wb.SheetNames.forEach(name => {html += '<h3>'+escapeHtml(name)+'</h3>'; html += XLSX.utils.sheet_to_html(wb.Sheets[name]);}); out.innerHTML = html || 'Content coming soon.';}catch(err){out.innerHTML = 'Content coming soon.';}
+  if(!out || out.dataset.loaded === '1') return;
+  try{
+    out.innerHTML = 'Loading detailed rundown…';
+    const res = await fetch('downloads/products/angular-contact-ball-bearings/Angular Contact Ball Bearings.xlsx', {cache:'no-store'});
+    if(!res.ok) throw new Error('XLSX not found');
+    const arrayBuffer = await res.arrayBuffer();
+    const wb = XLSX.read(arrayBuffer, {type:'array'});
+    let html = '';
+    wb.SheetNames.forEach(name => {
+      html += '<h3>'+escapeHtml(name)+'</h3>';
+      html += XLSX.utils.sheet_to_html(wb.Sheets[name]);
+    });
+    out.innerHTML = html || '<p>No detailed content found.</p>';
+    out.dataset.loaded = '1';
+  }catch(err){
+    out.innerHTML = '<p><strong>Unable to load detailed rundown.</strong></p><p>Please check the source file exists at <code>downloads/products/angular-contact-ball-bearings/Angular Contact Ball Bearings.xlsx</code>.</p>';
+    console.error(err);
+  }
 }
 function escapeHtml(s){return String(s).replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));}
 </script>
