@@ -8,28 +8,38 @@
 <link href="assets/css/style.css" rel="stylesheet"/>
 
 <style>
-/* --- ICON STYLING (SAFE ADD) --- */
+/* === MATCH DASHBOARD TILE ICON STYLE === */
+
 .productIcon{
   width:100%;
   display:flex;
   justify-content:center;
   align-items:center;
-  margin-bottom:14px;
+  margin-bottom:18px; /* increased spacing like dashboard */
 }
 
 .productIcon img{
-  width:84px;              /* 🔧 main size control */
-  height:84px;
+  width:100px;       /* 🔥 key change */
+  height:100px;
   object-fit:contain;
-  border-radius:14px;
-  box-shadow:0 10px 24px rgba(0,0,0,.35);
-  transition:transform .2s ease, box-shadow .2s ease;
+
+  border-radius:16px;
+
+  /* stronger depth like dashboard tiles */
+  box-shadow:0 16px 34px rgba(0,0,0,.45);
+
+  transition:all .2s ease;
 }
 
-/* subtle hover lift (matches BW feel) */
+/* hover = same lift feel as dashboard */
 .productCard:hover .productIcon img{
-  transform:translateY(-4px) scale(1.04);
-  box-shadow:0 16px 34px rgba(0,0,0,.45);
+  transform:translateY(-6px) scale(1.05);
+  box-shadow:0 22px 44px rgba(0,0,0,.55);
+}
+
+/* tighten title spacing to match dashboard */
+.productTitle{
+  margin-top:4px;
 }
 </style>
 
