@@ -1,41 +1,105 @@
 <!DOCTYPE html>
-
 <html lang="en">
 <head>
 <meta charset="utf-8"/>
-<meta content="width=device-width,initial-scale=1" name="viewport"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
 <title>Resources</title>
+
 <link href="assets/css/style.css" rel="stylesheet"/>
+
+<style>
+/* --- ICON STYLING (SAFE ADD) --- */
+.productIcon{
+  width:100%;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  margin-bottom:14px;
+}
+
+.productIcon img{
+  width:84px;              /* 🔧 main size control */
+  height:84px;
+  object-fit:contain;
+  border-radius:14px;
+  box-shadow:0 10px 24px rgba(0,0,0,.35);
+  transition:transform .2s ease, box-shadow .2s ease;
+}
+
+/* subtle hover lift (matches BW feel) */
+.productCard:hover .productIcon img{
+  transform:translateY(-4px) scale(1.04);
+  box-shadow:0 16px 34px rgba(0,0,0,.45);
+}
+</style>
+
 </head>
+
 <body data-page="page">
-<div class="container"><div id="bw-global-header"></div>
-<section class="heroPanel">
-<div class="heroIcon">🧰</div>
-<h1>Resources</h1>
-<p class="subtitle" style="text-align:center;max-width:820px;margin:10px auto 0">Quick access to branch resources, reference pages, and the new order capture page.</p>
-</section>
-<section class="cards products">
-<a class="card productCard" href="resources-accounts.html">
-<div class="productTitle">Accounts</div>
-<div class="subtitle">Account forms, customer setup and related resources.</div>
-</a>
-<a class="card productCard" href="product-taxonomy.html">
-<div class="productTitle">Products</div>
-<div class="subtitle">Quick category access and taxonomy pages.</div>
-</a>
-<a class="card productCard" href="resources-templates.html">
-<div class="productTitle">Templates</div>
-<div class="subtitle">Reusable forms, templates and branch documents.</div>
-</a>
-<a class="card productCard" href="rack-builder.html">
-<div class="productTitle">Rack Map Builder</div>
-<div class="subtitle">Build a parts rack map for customer setups and replenishment.</div>
-</a>
-<a class="card productCard" href="order.html">
-<div class="productTitle">Order Capture</div>
-<div class="subtitle">Scan or enter parts and generate structured orders.</div>
-</a>
-</section>
+
+<div class="container">
+  <div id="bw-global-header"></div>
+
+  <section class="heroPanel">
+    <div class="heroIcon">🧰</div>
+    <h1>Resources</h1>
+    <p class="subtitle" style="text-align:center;max-width:820px;margin:10px auto 0">
+      Quick access to branch resources, reference pages, and the new order capture page.
+    </p>
+  </section>
+
+  <section class="cards products">
+
+    <!-- ACCOUNTS -->
+    <a class="card productCard" href="resources-accounts.html">
+      <div class="productIcon">
+        <img src="assets/icons/accounts.png" alt="Accounts">
+      </div>
+      <div class="productTitle">Accounts</div>
+      <div class="subtitle">Account forms, customer setup and related resources.</div>
+    </a>
+
+    <!-- PRODUCTS -->
+    <a class="card productCard" href="product-taxonomy.html">
+      <div class="productIcon">
+        <img src="assets/icons/products.png" alt="Products">
+      </div>
+      <div class="productTitle">Products</div>
+      <div class="subtitle">Quick category access and taxonomy pages.</div>
+    </a>
+
+    <!-- TEMPLATES -->
+    <a class="card productCard" href="resources-templates.html">
+      <div class="productIcon">
+        <img src="assets/icons/templates.png" alt="Templates">
+      </div>
+      <div class="productTitle">Templates</div>
+      <div class="subtitle">Reusable forms, templates and branch documents.</div>
+    </a>
+
+    <!-- RACK BUILDER -->
+    <a class="card productCard" href="rack-builder.html">
+      <div class="productIcon">
+        <img src="assets/icons/rack-builder.png" alt="Rack Builder">
+      </div>
+      <div class="productTitle">Rack Map Builder</div>
+      <div class="subtitle">Build a parts rack map for customer setups and replenishment.</div>
+    </a>
+
+    <!-- ORDER CAPTURE -->
+    <a class="card productCard" href="order.html">
+      <div class="productIcon">
+        <img src="assets/icons/order.png" alt="Order Generator">
+      </div>
+      <div class="productTitle">Order Capture</div>
+      <div class="subtitle">Scan or enter parts and generate structured orders.</div>
+    </a>
+
+  </section>
+
 </div>
-<script src="assets/js/bw-header.js"></script></body>
+
+<script src="assets/js/bw-header.js"></script>
+
+</body>
 </html>
