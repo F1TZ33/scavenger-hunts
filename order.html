@@ -103,7 +103,6 @@ body{
   gap:12px;
 }
 
-/* Prevent date field overflow */
 .orderTopGrid,
 .orderTopGrid .field,
 .orderTopGrid input{
@@ -119,7 +118,6 @@ body{
   -webkit-appearance:none;
 }
 
-/* Scanner */
 .scannerOverlay{
   position:fixed;
   inset:0;
@@ -294,6 +292,7 @@ body{
   let activeRow = null;
   let stream = null;
   let scanFrame = null;
+  let lastEntryWasScan = false;
 
   orderDate.value = new Date().toISOString().slice(0,10);
 
@@ -356,8 +355,14 @@ body{
     partInput.value = partText || payload.bin || payload.part || '';
     qtyInput.value = payload.max || '';
 
+    lastEntryWasScan = true;
+
     if(partInput.value && qtyInput.value && scannedRow === root.lastElementChild){
-      row();
+      const nextRow = row();
+
+      setTimeout(() => {
+        startScanner(nextRow);
+      }, 300);
     }
 
     activeRow = null;
@@ -469,6 +474,7 @@ body{
 
     qty.addEventListener('blur', () => {
       if(part.value && qty.value && el === root.lastElementChild){
+        lastEntryWasScan = false;
         row();
       }
     });
@@ -477,6 +483,7 @@ body{
       if(event.key === 'Enter'){
         event.preventDefault();
         if(part.value && qty.value && el === root.lastElementChild){
+          lastEntryWasScan = false;
           row();
         }
       }
@@ -492,6 +499,8 @@ body{
     };
 
     el.querySelector('.orderScanBtn').onclick = () => startScanner(el);
+
+    return el;
   }
 
   function collectItems(){
@@ -538,7 +547,17 @@ body{
   }
 
   closeScannerBtn.onclick = stopScanner;
-  addBtn.onclick = () => row();
+
+  addBtn.onclick = () => {
+    lastEntryWasScan = false;
+    const newRow = row();
+    const input = newRow.querySelector('.partInput');
+    if(input){
+      input.focus();
+      input.scrollIntoView({behavior:'smooth', block:'center'});
+    }
+  };
+
   completeBtn.onclick = openEmail;
 
   row();
